@@ -1,0 +1,26 @@
+location_name,location_type,country,uncertainty_type,value,lower_bound,upperbound
+Tianjin,city,China,Unspecified,5.4,0.9,9.9
+Tianjin,city,China,Unspecified,5.2,1,9.4
+Tianjin,city,China,confidence interval 95%,9,7.92,10.2
+Tianjin,city,China,"q = (0.025, 0.975) quantiles",6.9,2,12.7
+Tianjin,city,China,"q = (0.025, 0.975) quantiles",12.4,5.4,19
+Shenzhen,city,China,95% confidence interval,4.8,4.2,5.4
+excluding Wuhan,country,China,confidence interval 95%,4.6,3.3,5.7
+including Wuhan,country,China,confidence interval 95%,5,4.1,5.8
+Unspecified,country,Singapore,Unspecified,6.6,1.8,11.4
+Unspecified,country,Singapore,confidence interval 95%,7.1,6.1,8.3
+Unspecified,country,Singapore,"q = (0.025, 0.975) quantiles",5.46,1.34,11.1
+Unspecified,country,Singapore,"q = (0.025, 0.975) quantiles",7.27,1.31,17.3
+Unspecified,country,China,confidence interval 95%,8.13,7.37,8.91
+Unspecified,country,China,confidence interval 95%,8.62,8.02,9.28
+Unspecified,Country,China,confidence interval 95%,4.2,3.5,5.1
+Unspecified,Country,Vietnam,credible interval 95%,6.4,4.89,8.5
+Unspecified,Country,France,Unspecified,5.1,Unspecified,Unspecified
+Unspecified,Country,United States,confidence interval 95%,8.41,6.64,9.42
+Unspecified,Country,United States,confidence interval 95%,10.69,10.02,11.74
+Unspecified,province,China,confidence interval 95%,4.2,3.5,5.1
+Mainland China,region,China,confidence interval 95%,5.4,4.2,6.7
+excluding Wuhan,region,China,confidence interval 95%,5.2,4.4,6
+Mainland China excluding Hubei,Region,China,confidence interval 95%,5.2,1.8,12.4
+,,,,,,
+,,,6.855281153,,,
