@@ -1,0 +1,2 @@
+This folder contains 4 time series, depicting the model curve_fit output for 21 days after an initial case.
+The titles of the model are the k value, the c value, and the cost function at those values.

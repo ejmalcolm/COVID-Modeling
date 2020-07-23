@@ -1,8 +1,8 @@
-from scipy.integrate import odeint
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import PercentFormatter
+import numpy as np
 import seaborn as sb
+from matplotlib.ticker import PercentFormatter
+from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 
 global asympt
@@ -25,7 +25,7 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
     ###other valsameters###
     # k = .2 #percentage of exposed -> asymptomatic
-    sig = 1/15 #exposed -> presympt/astmpy
+    sig = 1/9 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
     nu = 1/15 #sympt -> deceased
     gam_I = 1/20 #sympt -> recovered
@@ -42,10 +42,6 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     #calculate R0
     global R0
     R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (c*b_I) / delt )) + ( k*sig * ( (c*b_I)/gam_A ) )
-    global R0_deriv_k
-    R0_deriv_k = sig*(((c*b_I))/gam_A)
-    global R0_deriv_c
-    R0_deriv_c = (b_I/delt) + ( (k*sig*b_I) /gam_A )
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt, total_cases]
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
@@ -99,6 +95,8 @@ def get_optimal_bI(k, c):
 #plot model output against given dataset for parameter values
 def plot_for_vals(dataset, bI, k, c):
     y = model(bI,k,c)
+    f5 = plt.figure(5)
+    f5.suptitle(f'bI={bI}, k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
 
@@ -204,13 +202,6 @@ def plot_avs(k, c): #sympt vs. asympt timeseries
     plt.plot(t, y[:,2], label='(%s, %s) Asymptomatic' % (k, c))
 
 
-def R0_derivs(k, c, bI=False):
-    if not bI:
-        bI = get_optimal_bI(k, c)
-    ODEmodel(y0, t, bI, k, c) # calculates the three r0 values
-    return f"R0: {R0}\nR0_c: {R0_deriv_c}\nR0_k: {R0_deriv_k}"
-
-
 def cost_heatmap():
     #first, we curve fit at all k,c values then return the cost function
     total_list = []
@@ -232,10 +223,56 @@ def cost_heatmap():
     plt.ylabel(r'K, Percentage of Cases Asymptomatic')
     heat_map.invert_yaxis()
 
+
+def R0_deriv_plots():
+    bI = 2 #fixed value
+    sig = 1/15 #exposed -> presympt/astmpy
+    delt = 1/2 #pre-sympt -> sympt
+    nu = 1/15 #sympt -> deceased
+    gam_I = 1/20 #sympt -> recovered
+    gam_A = 1/20 #asympt -> recovered
+
+    c = np.linspace(0,5)
+    k = np.linspace(0,1)
+    R0_deriv_k = sig*(((c*bI))/gam_A)
+    kslope = np.polyfit(c, R0_deriv_k, 1)[:2]
+    R0_deriv_c = (bI/delt) + ( (k*sig*bI) /gam_A )
+    cslope = np.polyfit(k, R0_deriv_c, 1)
+    plt.plot(k, R0_deriv_c, label= f'R0_c, slope {cslope}')
+    plt.plot(c, R0_deriv_k, label= f'R0_k, slope {kslope}')
+
+
+def BI_vs_c_heatmap():
+    #first, we generate an array of r0 values
+    r0_list = []
+    for bI in np.arange(1,5.5,step=.5):
+        sublist = []
+        for c in np.arange(1, 5.5, step=.5):
+            # k fixed at .2
+            ODEmodel(y0, t, bI, .2, c)
+            r0 = round(R0, 2)
+            sublist.append((r0))
+        r0_list.append(sublist)
+    r0_array = np.array(r0_list)
+    
+    #then we plot the heatmap from that array
+    f6 = plt.figure(6)
+    heat_map = sb.heatmap(r0_array, annot=True, fmt='.5g',
+      yticklabels = np.arange(1, 5.5, step=.5),
+      xticklabels = np.arange(1, 5.5, step=.5),
+      cmap='Reds', cbar_kws = {'label': 'R0'})
+    plt.xlabel('C, where βₐ = c*βᵢ')
+    plt.ylabel(r'βᵢ, infectious transmission rate')
+    heat_map.invert_yaxis()
+
+
 # you always need to globally define the dataset
 conf_incidence = define_dataset(2, 21)
-op = get_curve_fit(.9, 5)
-print(f'BI: {op.x}, Cost: {op.cost}, Status: {op.status}')
 
-# plt.legend()
-# plt.show()
+# op = get_curve_fit(.1, 5)
+# plot_for_vals(conf_incidence, op.x, .1, 5)
+
+BI_vs_c_heatmap()
+
+plt.legend()
+plt.show()

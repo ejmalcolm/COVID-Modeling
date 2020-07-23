@@ -1,15 +1,7 @@
-plot R0_k vs. c and R0_c vs. k
-
-heatmap: fix k at .2, bi and c on the axes, output = r0
-
-leastsq()? get least_squares() working with the boarding school example?
-	COST FUNCTIONS
-
-gamma vs nu
-
-change sigma value to the new one from robert's dataset
 
 ---
+gamma vs nu
+
 SOCIAL DISTANCING
 - beta value as polynomial
 	- lets beta value change over time
@@ -17,9 +9,4 @@ SOCIAL DISTANCING
 ESTIMATING R-EFFECTIVE
 - r_effective = r0 under control measures
 - in terms of different cities
-
 --
-
-- fix bI value, look at different c and k values and what r0/total cases result
-	-selecting it: around beta = 2, maybe vary it manually
--  graph c values <1
