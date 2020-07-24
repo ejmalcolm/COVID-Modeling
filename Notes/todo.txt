@@ -1,12 +1,31 @@
+- start a week or two back from the initial case y0=1
+	- start with the actual case number if you're doing it automatically
 
----
-gamma vs nu
+- add a degree of freedom with b_P, basically c1 vs c2
+	- output a cost heatmap
+
+- redo figures
 
 SOCIAL DISTANCING
 - beta value as polynomial
 	- lets beta value change over time
+- force beta to be positive max(polynomial, 0)
+
+---
+gamma vs nu
+- percentage deceased, percentage recovered (.01*gam=nu .01 = CHANCE OF DYING)
+
 
 ESTIMATING R-EFFECTIVE
 - r_effective = r0 under control measures
 - in terms of different cities
+
+infectious immigration rate?
+
+hospitalized class?
 --
+
+curve_fit figure
+cost heatmap
+BI_vs_c r0 heatmap
+r0 deriv plots

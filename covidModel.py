@@ -235,9 +235,9 @@ def R0_deriv_plots():
     c = np.linspace(0,5)
     k = np.linspace(0,1)
     R0_deriv_k = sig*(((c*bI))/gam_A)
-    kslope = np.polyfit(c, R0_deriv_k, 1)[:2]
+    kslope = np.polyfit(c, R0_deriv_k, 1)[0]
     R0_deriv_c = (bI/delt) + ( (k*sig*bI) /gam_A )
-    cslope = np.polyfit(k, R0_deriv_c, 1)
+    cslope = np.polyfit(k, R0_deriv_c, 1)[0]
     plt.plot(k, R0_deriv_c, label= f'R0_c, slope {cslope}')
     plt.plot(c, R0_deriv_k, label= f'R0_k, slope {kslope}')
 
@@ -271,8 +271,10 @@ conf_incidence = define_dataset(2, 21)
 
 # op = get_curve_fit(.1, 5)
 # plot_for_vals(conf_incidence, op.x, .1, 5)
+R0_deriv_plots()
 
-BI_vs_c_heatmap()
+# bI_heatmap()
+# BI_vs_c_heatmap()
 
 plt.legend()
 plt.show()
