@@ -140,7 +140,7 @@ def bI_heatmap(): #get a heatmap of bI values for a range of k and c values, ran
 
 def get_R0(k, c):
     bI = get_optimal_bI(k,c)
-    # bI = 2 ## for fixed
+    bI = 2 ## for fixed
     ODEmodel(y0, t, bI, k, c)
     return R0 #R0 is defined in a global variable, that's the only way to access it for reasons
 
@@ -150,9 +150,9 @@ def R0_heatmap():
     r0_list = []
     for k in np.arange(.1,1,step=.1):
         sublist = []
-        for c in np.arange(.1, 1, step=.1):
-            r0 = round(get_R0(k,c)[0],3)
-            # r0 = round(get_R0(k,c),3) #this is the fixed version
+        for c in np.arange(1, 5.5, step=.5):
+            # r0 = round(get_R0(k,c)[0],3)
+            r0 = round(get_R0(k,c),3) #this is the fixed version
             sublist.append((r0))
         r0_list.append(sublist)
     r0_array = np.array(r0_list)
@@ -161,7 +161,7 @@ def R0_heatmap():
     f2 = plt.figure(2)
     heat_map = sb.heatmap(r0_array, annot=True, fmt='.3g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
-      xticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
+      xticklabels = [round(x,1) for x in np.arange(1, 5.5, step=.5)],
       cmap='Reds', cbar_kws = {'label': 'R0'})
     plt.xlabel('C, where βₐ = c*βᵢ')
     plt.ylabel(r'K, Percentage of Cases Asymptomatic')
@@ -297,7 +297,7 @@ conf_incidence = define_dataset(2, 21)
 # plot_for_vals(conf_incidence, op.x, .2, 5)
 # R0_deriv_plots()
 
-cost_heatmap()
+R0_heatmap()
 # BI_vs_c_heatmap()
 
 plt.legend()
