@@ -18,6 +18,8 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     R = vals[5]
     D = vals[6]
     ###defining lambda###
+    # ! delete below for static bI value
+    # b_I = a*t^2 + b*t + d
     b_A = c*b_I #transmission from asympt as a multiple "c" of symptomatic infection
     b_P = b_A #transmission from presympt
     # b_I = params[1] #transmission from sympt 
@@ -27,9 +29,9 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     # k = .2 #percentage of exposed -> asymptomatic
     sig = 1/9 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
-    nu = 1/15 #sympt -> deceased
     gam_I = 1/20 #sympt -> recovered
     gam_A = 1/20 #asympt -> recovered
+    nu = gam_I/99 #sympt -> deceased
     ###stuff to return###
     dSdt = (-lamb*S)
     dEdt = (lamb*S) - (sig*E)
@@ -50,7 +52,7 @@ def model(beta_I, k, c): #function that allows us to call the odeint solver with
 def gen_time(caseinc, days_after):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
     last_index = first_index+days_after # first day + 3 weeks
-    return caseinc[first_index:last_index]
+    return caseinc[first_index-14:last_index]
 
 ##used for testing all different county data sets systematically
 def test_all_sets(k, c):
@@ -102,11 +104,11 @@ def plot_for_vals(dataset, bI, k, c):
 
   
 def define_dataset(index, days_after): #change first index to 1=DOC, PHL, NO, SF, Alamos, Honolulu, Juneau, Denver, Muscogee, Fayette
-    temp_populations = (704749,1526000,343829,881549,12019,974563,31275,600158,195769,323152)
+    TEMP_POPULATIONS = (704749,1526000,343829,881549,12019,974563,31275,600158,195769,323152)
     global y0
-    y0 = [temp_populations[index],1,0,0,0,0,0,0] #define population
+    y0 = [TEMP_POPULATIONS[index],1,0,0,0,0,0,0] #define population
     global t
-    t = np.linspace(0,days_after,num=days_after)
+    t = np.linspace(0,days_after+14,num=days_after+14)
     #plot already existing case data
     conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][0]) #print the name of the county
@@ -265,15 +267,37 @@ def BI_vs_c_heatmap():
     plt.ylabel(r'βᵢ, infectious transmission rate')
     heat_map.invert_yaxis()
 
+def c1c2_heatmap():
+    #first, we curve fit at all k,c values then return the cost function
+    total_list = []
+    for c1 in np.arange(0, 5.5, step=.5):
+        sublist = []
+        for c2 in np.arange(1, 11, step=.5):
+            total = get_curve_fit(c1, c2).cost
+            sublist.append((total))
+        total_list.append(sublist)
+    total_array = np.array(total_list)
+
+    #then we plot the heatmap from that array
+    f4 = plt.figure(4)
+    heat_map = sb.heatmap(total_array, annot=True, fmt='.5g',
+      yticklabels = np.arange(0, 5.5, step=.5),
+      xticklabels = np.arange(1, 11, step=.5),
+      cmap='Greens', cbar_kws = {'label': 'Cost Function'})
+    plt.xlabel('C1, where βₐ = c*βᵢ')
+    plt.ylabel('C2, where βₚ = c*βᵢ')
+    heat_map.invert_yaxis()
+
 
 # you always need to globally define the dataset
 conf_incidence = define_dataset(2, 21)
 
-# op = get_curve_fit(.1, 5)
-# plot_for_vals(conf_incidence, op.x, .1, 5)
-R0_deriv_plots()
 
-# bI_heatmap()
+# op = get_curve_fit(.1, 5)
+# plot_for_vals(conf_incidence, op.x, .2, 5)
+# R0_deriv_plots()
+
+cost_heatmap()
 # BI_vs_c_heatmap()
 
 plt.legend()
