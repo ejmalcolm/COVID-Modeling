@@ -141,7 +141,7 @@ def R0_heatmap():
 
 def get_tot(k, c):
     bI = get_optimal_bI(k,c)
-    bI = 2
+    # bI = 2
     total = model(bI, k, c)[-1,-1]
     return total
 
@@ -266,6 +266,7 @@ conf_incidence = define_dataset(2, 21)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
+total_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
