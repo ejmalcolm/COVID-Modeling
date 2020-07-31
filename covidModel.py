@@ -293,11 +293,12 @@ def c1c2_heatmap():
 conf_incidence = define_dataset(2, 21)
 
 
-# op = get_curve_fit(.1, 5)
-# plot_for_vals(conf_incidence, op.x, .2, 5)
+op = get_curve_fit(.2, 3)
+plot_for_vals(conf_incidence, op.x, .2, 3)
 # R0_deriv_plots()
 
-R0_heatmap()
+# bI_heatmap()
+# R0_heatmap()
 # BI_vs_c_heatmap()
 
 plt.legend()
