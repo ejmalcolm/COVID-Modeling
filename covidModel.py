@@ -293,9 +293,10 @@ def c1c2_heatmap():
 conf_incidence = define_dataset(2, 21)
 
 
-op = get_curve_fit(.2, 3)
-plot_for_vals(conf_incidence, op.x, .2, 3)
+# op = get_curve_fit(.2, 3)
+# plot_for_vals(conf_incidence, op.x, .2, 3)
 # R0_deriv_plots()
+total_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
