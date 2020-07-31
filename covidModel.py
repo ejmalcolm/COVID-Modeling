@@ -54,35 +54,6 @@ def gen_time(caseinc, days_after):
     last_index = first_index+days_after # first day + 3 weeks
     return caseinc[first_index-14:last_index]
 
-##used for testing all different county data sets systematically
-def test_all_sets(k, c):
-    conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
-    i = 1
-    temp_populations = (704749,1526000,343829,881549,12019,974563,31275,600158,195769,323152)
-    for _ in range(1,11):
-        pop = temp_populations[i-1]
-        global y0
-        y0 = [pop,1,0,0,0,0,0]
-        print(conf_data[i][0], pop) 
-        pre_incidence = [float(data) for data in conf_data[i:][0][2:]]
-        global conf_incidence 
-        conf_incidence = gen_time(pre_incidence,21)
-        print(conf_incidence)
-        x = get_optimal_bI(k, c)
-        print(x)
-        i += 1
-
-#testing sweden data
-def test_sweden():
-    conf_data = np.genfromtxt('global_case_time_series.csv', dtype=str,delimiter=",")
-    conf_incidence = []
-    total_cases = 0
-    for tot_today in conf_data[1][34:]:
-        new_cases = int(tot_today)-total_cases
-        total_cases += new_cases
-        conf_incidence.append(new_cases)
-    print(conf_incidence)
-
 #get the return from curve fit
 def get_curve_fit(k, c):
     resids = lambda bI, data: (model(bI, k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
@@ -295,8 +266,6 @@ conf_incidence = define_dataset(2, 21)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-# R0_deriv_plots()
-total_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
