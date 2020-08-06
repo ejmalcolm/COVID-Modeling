@@ -12,21 +12,11 @@ SOCIAL DISTANCING
 - from wolbachia paper: linear, logistic, exponential functions (steal)
 
 TOTAL CASES
-- run with bi fixed, unfixed, see what c effects are
-
-- run cost heatmap with values of c>1 again
-
-- fix b_A = .1*bI, fit for k vs c2 (presymptomatic)
 
 - markov-chain monte carlo
 
-wednesday at 4pm
 
 ---
-gamma vs nu
-- percentage deceased, percentage recovered (.01*gam=nu .01 = CHANCE OF DYING)
-
-
 ESTIMATING R-EFFECTIVE
 - r_effective = r0 under control measures
 - in terms of different cities

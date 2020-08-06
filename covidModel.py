@@ -18,10 +18,13 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     R = vals[5]
     D = vals[6]
     ###defining lambda###
-    # ! delete below for static bI value
+    # ! fit asymptomatic transmission
     # b_I = a*t^2 + b*t + d
     b_A = c*b_I #transmission from asympt as a multiple "c" of symptomatic infection
     b_P = b_A #transmission from presympt
+    # ! low asympyomatic hypothesis
+    # b_A = .1 * b_I
+    # b_P = c*b_I
     # b_I = params[1] #transmission from sympt 
     N = S+E+P+A+I+R+D
     lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
@@ -181,8 +184,8 @@ def cost_heatmap():
     for k in np.arange(.1,1,step=.1):
         sublist = []
         for c in np.arange(1, 5.5, step=.5):
-            total = get_curve_fit(k, c).cost
-            sublist.append((total))
+            cst = get_curve_fit(k, c).cost
+            sublist.append((cst))
         total_list.append(sublist)
     total_array = np.array(total_list)
 
@@ -190,7 +193,7 @@ def cost_heatmap():
     f4 = plt.figure(4)
     heat_map = sb.heatmap(total_array, annot=True, fmt='.5g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
-      xticklabels = np.arange(1, 5.5, step=.5),
+      xticklabels = [round(x,1) for x in np.arange(1,5.5,step=.5)],
       cmap='BuPu', cbar_kws = {'label': 'Cost Function'})
     plt.xlabel('C, where βₐ = c*βᵢ')
     plt.ylabel(r'K, Percentage of Cases Asymptomatic')
@@ -266,11 +269,21 @@ conf_incidence = define_dataset(2, 21)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-total_heatmap()
+# cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
 # BI_vs_c_heatmap()
 
-plt.legend()
-plt.show()
+c_dict = {}
+for k in np.arange(.1,.2,step=.1):
+    sublist = []
+    for c in np.arange(1, 200, step=.5):
+        cst = get_curve_fit(k, c).cost
+        c_dict[c] = cst
+
+with open('cost_values.txt', 'w') as f:
+    print(c_dict, file=f)
+
+# plt.legend()
+# plt.show()
