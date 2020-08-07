@@ -4,11 +4,18 @@ import seaborn as sb
 from matplotlib.ticker import PercentFormatter
 from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
+import math
 
-global asympt
-global sympt
+def social_bI(bI_0, D, alpha):
+    try:
+        bI = bI_0 * math.pow(D, alpha)
+    except ValueError:
+        bI = 0
+    return max(bI, 0)
 
-def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
+
+# def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
+def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
     #unpack
     S = vals[0]
     E = vals[1]
@@ -19,13 +26,15 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     D = vals[6]
     ###defining lambda###
     # ! fit asymptomatic transmission
-    # b_I = a*t^2 + b*t + d
+    if np.isnan(I):
+            quit()
+    dD = ((1/20)/99)*I # nu*I
+    b_I = social_bI(bI_0, D, alpha)
     b_A = c*b_I #transmission from asympt as a multiple "c" of symptomatic infection
     b_P = b_A #transmission from presympt
     # ! low asympyomatic hypothesis
     # b_A = .1 * b_I
     # b_P = c*b_I
-    # b_I = params[1] #transmission from sympt 
     N = S+E+P+A+I+R+D
     lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
     ###other valsameters###
@@ -47,10 +56,13 @@ def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
     #calculate R0
     global R0
     R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (c*b_I) / delt )) + ( k*sig * ( (c*b_I)/gam_A ) )
-    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt, total_cases]
+    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,total_cases]
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
     return odeint(ODEmodel, y0, t, (beta_I, k, c))
+
+def SDmodel(bI_0, alpha, k, c):
+    return odeint(ODEmodel, y0, t, (bI_0, alpha, k, c))
 
 def gen_time(caseinc, days_after):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
@@ -63,9 +75,16 @@ def get_curve_fit(k, c):
     op = least_squares(resids, 1.5, args=(conf_incidence,) )
     return op
 
+def SD_curve_fit(k, c):
+    resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
+    op = least_squares(resids, [1, 1], args=(conf_incidence,) )
+    print(op.x)
+    return op
+
 #general form to get the optimal B_I from curve fit
 def get_optimal_bI(k, c):
-    op = get_curve_fit(k, c)
+    # ! change
+    op = SD_curve_fit(k, c)
     return op.x
 
 #plot model output against given dataset for parameter values
@@ -102,7 +121,7 @@ def bI_heatmap(): #get a heatmap of bI values for a range of k and c values, ran
     bI_array = np.array(bI_list)
 
     #then we plot the heatmap from that array
-    f1 = plt.figure(1)
+    plt.figure(1)
     heat_map = sb.heatmap(bI_array, annot=True, fmt='.3g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
       xticklabels = np.arange(1, 5.5, step=.5),
@@ -132,7 +151,7 @@ def R0_heatmap():
     r0_array = np.array(r0_list)
 
     #then we plot the heatmap from that array
-    f2 = plt.figure(2)
+    plt.figure(2)
     heat_map = sb.heatmap(r0_array, annot=True, fmt='.3g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
       xticklabels = [round(x,1) for x in np.arange(1, 5.5, step=.5)],
@@ -161,7 +180,7 @@ def total_heatmap():
     total_array = np.array(total_list)
 
     #then we plot the heatmap from that array
-    f3 = plt.figure(3)
+    plt.figure(3)
     heat_map = sb.heatmap(total_array, annot=True, fmt='.9g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
       xticklabels = np.arange(1, 5.5, step=.5),
@@ -184,17 +203,17 @@ def cost_heatmap():
     for k in np.arange(.1,1,step=.1):
         sublist = []
         for c in np.arange(1, 5.5, step=.5):
-            cst = get_curve_fit(k, c).cost
+            cst = SD_curve_fit(k, c).cost
             sublist.append((cst))
         total_list.append(sublist)
     total_array = np.array(total_list)
 
     #then we plot the heatmap from that array
-    f4 = plt.figure(4)
+    plt.figure(4)
     heat_map = sb.heatmap(total_array, annot=True, fmt='.5g',
       yticklabels = [round(x,1) for x in np.arange(.1,1,step=.1)],
       xticklabels = [round(x,1) for x in np.arange(1,5.5,step=.5)],
-      cmap='BuPu', cbar_kws = {'label': 'Cost Function'})
+      cmap='Blues', cbar_kws = {'label': 'Cost Function'})
     plt.xlabel('C, where βₐ = c*βᵢ')
     plt.ylabel(r'K, Percentage of Cases Asymptomatic')
     heat_map.invert_yaxis()
@@ -204,8 +223,6 @@ def R0_deriv_plots():
     bI = 2 #fixed value
     sig = 1/15 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
-    nu = 1/15 #sympt -> deceased
-    gam_I = 1/20 #sympt -> recovered
     gam_A = 1/20 #asympt -> recovered
 
     c = np.linspace(0,5)
@@ -232,7 +249,6 @@ def BI_vs_c_heatmap():
     r0_array = np.array(r0_list)
     
     #then we plot the heatmap from that array
-    f6 = plt.figure(6)
     heat_map = sb.heatmap(r0_array, annot=True, fmt='.5g',
       yticklabels = np.arange(1, 5.5, step=.5),
       xticklabels = np.arange(1, 5.5, step=.5),
@@ -253,7 +269,6 @@ def c1c2_heatmap():
     total_array = np.array(total_list)
 
     #then we plot the heatmap from that array
-    f4 = plt.figure(4)
     heat_map = sb.heatmap(total_array, annot=True, fmt='.5g',
       yticklabels = np.arange(0, 5.5, step=.5),
       xticklabels = np.arange(1, 11, step=.5),
@@ -266,24 +281,15 @@ def c1c2_heatmap():
 # you always need to globally define the dataset
 conf_incidence = define_dataset(2, 21)
 
+# plot_avs(.2, 3)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-# cost_heatmap()
+cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
 # BI_vs_c_heatmap()
 
-c_dict = {}
-for k in np.arange(.1,.2,step=.1):
-    sublist = []
-    for c in np.arange(1, 200, step=.5):
-        cst = get_curve_fit(k, c).cost
-        c_dict[c] = cst
-
-with open('cost_values.txt', 'w') as f:
-    print(c_dict, file=f)
-
-# plt.legend()
-# plt.show()
+plt.legend()
+plt.show()

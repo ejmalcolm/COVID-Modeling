@@ -1,17 +1,6 @@
 SOCIAL DISTANCING
-- beta value as polynomial
-	- lets beta value change over time
-- force beta to be positive max(polynomial, 0)
-- define beta_I to put it in a different function
-- quadratic, x^3, logistic, nu*I 
-- betahat vs alpha, fix alpha at several values
-- switch to maybe a function of death rate, use the polynomial to see the relation
-- bi_0 * (dD/dt)^alpha
-- exponential: bI decreases exponentially as the death rate increases
 - compare different functions of beta, see what curve fit values match for the parameters
-- from wolbachia paper: linear, logistic, exponential functions (steal)
 
-TOTAL CASES
 
 - markov-chain monte carlo
 
