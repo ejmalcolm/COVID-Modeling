@@ -280,22 +280,22 @@ def c1c2_heatmap():
 # you always need to globally define the dataset
 conf_incidence = define_dataset(2, 21)
 
-global y0
-y0 = [1526000,1,0,0,0,0,0,0] #define population
-global t
-t = np.linspace(0,66,num=66)
-#plot already existing case data
-conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
-pre_incidence = [float(x) for x in conf_data[2][2:]]
-conf_incidence = pre_incidence[34:100]
+# global y0
+# y0 = [1526000,1,0,0,0,0,0,0] #define population
+# global t
+# t = np.linspace(0,66,num=66)
+# #plot already existing case data
+# conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
+# pre_incidence = [float(x) for x in conf_data[2][2:]]
+# conf_incidence = pre_incidence[34:100]
 
 
-# bI0, alpha = SD_curve_fit(.2, 3).x
-# plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
+bI0, alpha = SD_curve_fit(.2, 3).x
+plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-cost_heatmap()
+# cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
