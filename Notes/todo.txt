@@ -4,9 +4,10 @@ DONE
     - cost values-- cost function decreases with increasing C value for a long time, at least up to c=100, but gains diminish)
 
 SOCIAL DISTANCING
-- using a death parameter
-- reverses the k trend
-- better fits
+- using an exponential equation based off the death rate
+- reversal of both k and c trends
+- slightly better fit, even going against the new trends
+
 
 
 ---

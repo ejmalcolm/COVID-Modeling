@@ -27,9 +27,9 @@ def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
     ###defining lambda###
     # ! fit asymptomatic transmission
     if np.isnan(I):
-            quit()
-    dD = ((1/20)/99)*I # nu*I
-    b_I = social_bI(bI_0, D, alpha)
+        quit()
+    dD = (1/20/99) * I
+    b_I = social_bI(bI_0, dD, alpha)
     b_A = c*b_I #transmission from asympt as a multiple "c" of symptomatic infection
     b_P = b_A #transmission from presympt
     # ! low asympyomatic hypothesis
@@ -66,7 +66,6 @@ def SDmodel(bI_0, alpha, k, c):
 
 def gen_time(caseinc, days_after):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
-    print(first_index)
     last_index = first_index+days_after # first day + 3 weeks
     return caseinc[first_index-14:last_index]
 
@@ -79,7 +78,6 @@ def get_curve_fit(k, c):
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
     op = least_squares(resids, [1, 1], args=(conf_incidence,) )
-    print(op.x)
     return op
 
 #general form to get the optimal B_I from curve fit
@@ -280,25 +278,24 @@ def c1c2_heatmap():
 
 
 # you always need to globally define the dataset
-conf_incidence = define_dataset(2, 52)
+conf_incidence = define_dataset(2, 21)
 
-# global y0
-# y0 = [1526000,1,0,0,0,0,0,0] #define population
-# global t
-# t = np.linspace(0,66,num=66)
-# #plot already existing case data
-# conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
-# pre_incidence = [float(x) for x in conf_data[2][2:]]
-# conf_incidence = pre_incidence[34:100]
+global y0
+y0 = [1526000,1,0,0,0,0,0,0] #define population
+global t
+t = np.linspace(0,66,num=66)
+#plot already existing case data
+conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
+pre_incidence = [float(x) for x in conf_data[2][2:]]
+conf_incidence = pre_incidence[34:100]
 
 
-bI0, alpha = SD_curve_fit(.2, 3).x
-print(SD_curve_fit(.2, 3).cost)
-plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
+# bI0, alpha = SD_curve_fit(.2, 3).x
+# plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-# cost_heatmap()
+cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
