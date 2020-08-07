@@ -1,8 +1,12 @@
+DONE
+- before SD implementation:
+    - k vs c2, b_A=.1*bI, fit for bI, slightly better fit than having c1=c2
+    - cost values-- cost function decreases with increasing C value for a long time, at least up to c=100, but gains diminish)
+
 SOCIAL DISTANCING
-- compare different functions of beta, see what curve fit values match for the parameters
-
-
-- markov-chain monte carlo
+- using a death parameter
+- reverses the k trend
+- better fits
 
 
 ---

@@ -66,6 +66,7 @@ def SDmodel(bI_0, alpha, k, c):
 
 def gen_time(caseinc, days_after):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
+    print(first_index)
     last_index = first_index+days_after # first day + 3 weeks
     return caseinc[first_index-14:last_index]
 
@@ -88,10 +89,10 @@ def get_optimal_bI(k, c):
     return op.x
 
 #plot model output against given dataset for parameter values
-def plot_for_vals(dataset, bI, k, c):
-    y = model(bI,k,c)
+def plot_for_vals(dataset, bI0, alpha, k, c):
+    y = SDmodel(bI0, alpha,k,c)
     f5 = plt.figure(5)
-    f5.suptitle(f'bI={bI}, k={k}, c={c}')
+    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
 
@@ -191,8 +192,8 @@ def total_heatmap():
 
 
 def plot_avs(k, c): #sympt vs. asympt timeseries
-    bI = get_optimal_bI(k, c)
-    y = model(bI,k,c)
+    bI_0, alpha = SD_curve_fit(k, c).x
+    y = SDmodel(bI_0, alpha, k,c)
     plt.plot(t, y[:,4], label='(%s, %s) Symptomatic' % (k, c))
     plt.plot(t, y[:,2], label='(%s, %s) Asymptomatic' % (k, c))
 
@@ -279,13 +280,25 @@ def c1c2_heatmap():
 
 
 # you always need to globally define the dataset
-conf_incidence = define_dataset(2, 21)
+conf_incidence = define_dataset(2, 52)
 
-# plot_avs(.2, 3)
+# global y0
+# y0 = [1526000,1,0,0,0,0,0,0] #define population
+# global t
+# t = np.linspace(0,66,num=66)
+# #plot already existing case data
+# conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
+# pre_incidence = [float(x) for x in conf_data[2][2:]]
+# conf_incidence = pre_incidence[34:100]
+
+
+bI0, alpha = SD_curve_fit(.2, 3).x
+print(SD_curve_fit(.2, 3).cost)
+plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-cost_heatmap()
+# cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()
