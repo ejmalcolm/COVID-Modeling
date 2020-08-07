@@ -290,12 +290,12 @@ conf_incidence = define_dataset(2, 21)
 # conf_incidence = pre_incidence[34:100]
 
 
-bI0, alpha = SD_curve_fit(.2, 3).x
-plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
+# bI0, alpha = SD_curve_fit(.2, 3).x
+# plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
 
 # op = get_curve_fit(.2, 3)
 # plot_for_vals(conf_incidence, op.x, .2, 3)
-# cost_heatmap()
+cost_heatmap()
 
 # bI_heatmap()
 # R0_heatmap()

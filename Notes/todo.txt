@@ -1,13 +1,20 @@
-DONE
-- before SD implementation:
-    - k vs c2, b_A=.1*bI, fit for bI, slightly better fit than having c1=c2
-    - cost values-- cost function decreases with increasing C value for a long time, at least up to c=100, but gains diminish)
+TODO
+- switch over to presymtomatic (c2) paradigm (bI*(.4 through .6)=bA)
+    - k (.15 through .7), use .5 for now
 
-SOCIAL DISTANCING
-- using an exponential equation based off the death rate
-- reversal of both k and c trends
-- slightly better fit, even going against the new trends
+- divide every cost value in a cost function heatmap by the lowest of the values, letting us do comparisons
 
+- check fit for richmond in new data
+- extend data out and see what the time series looks like
+- get R0 and plot it on a time series
+    - compare to initial R0 estimate (without social distancing)
+    - plot time series
+- look at other counties, see what time series looks like
+
+- other methods of talking r0?
+    - non-immunity granting diseases, how do they calculate r0
+    - "waning immunity"
+- testing rate problems? 
 
 
 ---
