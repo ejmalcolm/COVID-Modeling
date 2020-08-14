@@ -6,16 +6,16 @@ from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 import math
 
-def social_bI(bI_0, D, alpha):
+def social_bI(bI_0, alpha, N):
     try:
-        bI = bI_0 * math.pow(D, alpha)
+        bI = bI_0 * math.pow(N, alpha)
     except ValueError:
         bI = 0
     return max(bI, 0)
 
 
 # def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
-def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
+def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     #unpack
     S = vals[0]
     E = vals[1]
@@ -28,10 +28,9 @@ def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
     # ! fit asymptomatic transmission
     if np.isnan(I):
         quit()
-    dD = (1/20/99) * I
-    b_I = social_bI(bI_0, dD, alpha)
-    b_A = c*b_I #transmission from asympt as a multiple "c" of symptomatic infection
-    b_P = b_A #transmission from presympt
+    b_I = social_bI(bI_0, alpha, D)
+    b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
+    b_P = c2*b_A #transmission from presympt
     # ! low asympyomatic hypothesis
     # b_A = .1 * b_I
     # b_P = c*b_I
@@ -39,10 +38,10 @@ def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
     lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
     ###other valsameters###
     # k = .2 #percentage of exposed -> asymptomatic
-    sig = 1/9 #exposed -> presympt/astmpy
+    sig = 1/5 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
-    gam_I = 1/20 #sympt -> recovered
-    gam_A = 1/20 #asympt -> recovered
+    gam_I = 1/7 #sympt -> recovered
+    gam_A = 1/7 #asympt -> recovered
     nu = gam_I/99 #sympt -> deceased
     ###stuff to return###
     dSdt = (-lamb*S)
@@ -55,19 +54,23 @@ def ODEmodel(vals, t, bI_0, alpha, k, c, mxstep=50000):
     total_cases = sig*E
     #calculate R0
     global R0
-    R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (c*b_I) / delt )) + ( k*sig * ( (c*b_I)/gam_A ) )
+    R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,total_cases]
+
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
     return odeint(ODEmodel, y0, t, (beta_I, k, c))
 
+
 def SDmodel(bI_0, alpha, k, c):
     return odeint(ODEmodel, y0, t, (bI_0, alpha, k, c))
+
 
 def gen_time(caseinc, days_after):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
     last_index = first_index+days_after # first day + 3 weeks
     return caseinc[first_index-14:last_index]
+
 
 #get the return from curve fit
 def get_curve_fit(k, c):
@@ -75,10 +78,12 @@ def get_curve_fit(k, c):
     op = least_squares(resids, 1.5, args=(conf_incidence,) )
     return op
 
+
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
     op = least_squares(resids, [1, 1], args=(conf_incidence,) )
     return op
+
 
 #general form to get the optimal B_I from curve fit
 def get_optimal_bI(k, c):
@@ -90,21 +95,23 @@ def get_optimal_bI(k, c):
 def plot_for_vals(dataset, bI0, alpha, k, c):
     y = SDmodel(bI0, alpha,k,c)
     f5 = plt.figure(5)
-    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c}')
+    for x in y[-1,:]:
+        print(f'{x}')
+    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c} | R0 = {round(R0, 3)}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
-
   
 def define_dataset(index, days_after): #change first index to 1=DOC, PHL, NO, SF, Alamos, Honolulu, Juneau, Denver, Muscogee, Fayette
     TEMP_POPULATIONS = (704749,1526000,343829,881549,12019,974563,31275,600158,195769,323152)
     global y0
-    y0 = [TEMP_POPULATIONS[index],1,0,0,0,0,0,0] #define population
+    # y0 = [TEMP_POPULATIONS[index],1,0,0,0,0,0,0,0] #define 
+    y0 = [1526000,1,0,0,0,0,0,0] # PHL
     global t
     t = np.linspace(0,days_after+14,num=days_after+14)
     #plot already existing case data
-    conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
-    print(conf_data[index][0]) #print the name of the county
-    pre_incidence = [float(x) for x in conf_data[index][2:]]
+    conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
+    print(conf_data[index][2]) #print the name of the county
+    pre_incidence = [float(x) for x in conf_data[index][3:]]
     return gen_time(pre_incidence,days_after)
 
 
@@ -163,7 +170,7 @@ def R0_heatmap():
 def get_tot(k, c):
     bI = get_optimal_bI(k,c)
     # bI = 2
-    total = model(bI, k, c)[-1,-1]
+    total = model(bI, k, c)[-2,-2]
     return total
 
 
@@ -197,7 +204,7 @@ def plot_avs(k, c): #sympt vs. asympt timeseries
 
 
 def cost_heatmap():
-    #first, we curve fit at all k,c values then return the cost function
+    # first, we curve fit at all k,c values then return the cost function
     total_list = []
     for k in np.arange(.1,1,step=.1):
         sublist = []
@@ -205,7 +212,19 @@ def cost_heatmap():
             cst = SD_curve_fit(k, c).cost
             sublist.append((cst))
         total_list.append(sublist)
-    total_array = np.array(total_list)
+    # get the minimum value of all the cost outputs
+    mins = []
+    for sublist in total_list:
+        for item in sublist:
+            mins.append(item)
+    min_value = min(mins)
+    # divide every value by the minimum
+    standardized = []
+    for sublist in total_list:
+        sublist = [x/min_value for x in sublist]
+        standardized.append(sublist)
+    total_array = np.array(standardized)
+
 
     #then we plot the heatmap from that array
     plt.figure(4)
@@ -256,6 +275,7 @@ def BI_vs_c_heatmap():
     plt.ylabel(r'βᵢ, infectious transmission rate')
     heat_map.invert_yaxis()
 
+
 def c1c2_heatmap():
     #first, we curve fit at all k,c values then return the cost function
     total_list = []
@@ -276,30 +296,30 @@ def c1c2_heatmap():
     plt.ylabel('C2, where βₚ = c*βᵢ')
     heat_map.invert_yaxis()
 
-
 # you always need to globally define the dataset
-conf_incidence = define_dataset(2, 21)
+# conf_incidence = define_dataset(12, 21)
 
-# global y0
-# y0 = [1526000,1,0,0,0,0,0,0] #define population
-# global t
-# t = np.linspace(0,66,num=66)
-# #plot already existing case data
-# conf_data = np.loadtxt('COVID_city_county.csv', dtype=str,delimiter=",") #this is the incidence
-# pre_incidence = [float(x) for x in conf_data[2][2:]]
-# conf_incidence = pre_incidence[34:100]
+global y0
+# richmond pop 230436
+y0 = [1526000,1,0,0,0,0,0,0] #define population
+conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
+print(conf_data[12][2]) #print the name of the county
+pre_incidence = [float(x) for x in conf_data[12][3:]]
 
+conf_incidence = pre_incidence[34:]
+# 34-161, units of 42
 
-# bI0, alpha = SD_curve_fit(.2, 3).x
-# plot_for_vals(conf_incidence, bI0, alpha, .2, 3)
+global t
+t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
 
-# op = get_curve_fit(.2, 3)
-# plot_for_vals(conf_incidence, op.x, .2, 3)
-cost_heatmap()
+k = .5
+c = 5
+bI0, alpha = SD_curve_fit(k, c).x
+cost = SD_curve_fit(k, c).cost
+plot_for_vals(conf_incidence, bI0, alpha, k, c)
+# plot_reffective(conf_incidence, bI0, alpha, k, c)
 
-# bI_heatmap()
-# R0_heatmap()
-# BI_vs_c_heatmap()
+# cost_heatmap()
 
 plt.legend()
 plt.show()
