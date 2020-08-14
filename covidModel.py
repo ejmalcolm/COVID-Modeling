@@ -30,7 +30,7 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
         quit()
     b_I = social_bI(bI_0, alpha, D)
     b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
-    b_P = c2*b_A #transmission from presympt
+    b_P = c2*b_I #transmission from presympt
     # ! low asympyomatic hypothesis
     # b_A = .1 * b_I
     # b_P = c*b_I
@@ -300,7 +300,7 @@ def c1c2_heatmap():
 # conf_incidence = define_dataset(12, 21)
 
 global y0
-# richmond pop 230436
+# richmond pop 230436 , philly 1526000
 y0 = [1526000,1,0,0,0,0,0,0] #define population
 conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
 print(conf_data[12][2]) #print the name of the county
@@ -312,14 +312,13 @@ conf_incidence = pre_incidence[34:]
 global t
 t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
 
-k = .5
-c = 5
-bI0, alpha = SD_curve_fit(k, c).x
-cost = SD_curve_fit(k, c).cost
-plot_for_vals(conf_incidence, bI0, alpha, k, c)
-# plot_reffective(conf_incidence, bI0, alpha, k, c)
+# k = .5
+# c = 5
+# bI0, alpha = SD_curve_fit(k, c).x
+# cost = SD_curve_fit(k, c).cost
+# plot_for_vals(conf_incidence, bI0, alpha, k, c)
 
-# cost_heatmap()
+cost_heatmap()
 
 plt.legend()
 plt.show()
