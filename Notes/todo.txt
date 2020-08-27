@@ -1,5 +1,11 @@
 **TODO**
 
+to get R0, define a separate function that takes in death and all of the constant values
+
+feed the differnet BI function forms a dummy set of data and see what results
+
+get better guesses! latin hypercube sampling, debinfer
+
 investigate the small timeframe
     - at the 4 corner parameters, look at the alpha and beta values for each
     - pull a k and c combination, see what happens to beta (timeseries)
@@ -11,21 +17,9 @@ investigate the small timeframe
 - look at other counties, see what time series looks like
 - other datasets: muscokogee, georgia (columbus) | jackson, missisipi
 
-
-**NOTES**
-- very good fit for richmond
-- weird data for philly
-- need the original r0 formula so we can rewrite it for the presymptomatic version
-
-**DONE**
-- changed sigma, recovery values based off the eikenberry mask paper
-- divide every cost value in a cost function heatmap by the lowest of the values, letting us do comparisons
-- switch over to presymtomatic (c2) paradigm (bI*(.4 through .6)=bA)
-    - k (.15 through .7), use .5 for now
-- extend data out and see what the time series looks like
-- check fit for richmond in new data
-
 ---
+intreprations of beta function
+
 POSSIBLE BIG QUESTION: how do we deal with r0 when we might be making things worse?
 
 ESTIMATING R-EFFECTIVE

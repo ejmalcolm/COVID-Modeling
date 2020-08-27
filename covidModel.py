@@ -6,6 +6,7 @@ from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 import math
 
+
 def social_bI(bI_0, alpha, N):
     try:
         bI = bI_0 * math.pow(N, alpha)
@@ -24,6 +25,7 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     I = vals[4]
     R = vals[5]
     D = vals[6]
+    total_cases = vals[7]
     ###defining lambda###
     # ! fit asymptomatic transmission
     if np.isnan(I):
@@ -53,9 +55,8 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     dDdt = nu*I
     total_cases = sig*E
     #calculate R0
-    global R0
     R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
-    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,total_cases]
+    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,R0]
 
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
@@ -81,7 +82,7 @@ def get_curve_fit(k, c):
 
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
-    op = least_squares(resids, [1, 1], args=(conf_incidence,) )
+    op = least_squares(resids, [0, -1], args=(conf_incidence,) )
     return op
 
 
@@ -95,9 +96,7 @@ def get_optimal_bI(k, c):
 def plot_for_vals(dataset, bI0, alpha, k, c):
     y = SDmodel(bI0, alpha,k,c)
     f5 = plt.figure(5)
-    for x in y[-1,:]:
-        print(f'{x}')
-    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c} | R0 = {round(R0, 3)}')
+    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
   
@@ -296,6 +295,32 @@ def c1c2_heatmap():
     plt.ylabel('C2, where βₚ = c*βᵢ')
     heat_map.invert_yaxis()
 
+
+def plot_Reffective(k, c2):
+    # constants used for R0 calculation
+    sig = 1/5 # exposed -> presympt/astmpy
+    delt = 1/2 # pre-sympt -> sympt
+    gam_I = 1/7 # sympt -> recovered
+    gam_A = 1/7 # asympt -> recovered
+    nu = gam_I/99 # sympt -> deceased
+    # calculate an array of bI values
+    bI_0, alpha = SD_curve_fit(k, c).x
+    print(bI_0, alpha)
+    y = SDmodel(bI_0, alpha,k,c)
+    deaths = y[:,4]
+    print(deaths)
+    # calculate b_A and b_P
+    # R0_list = []
+    # for death in deaths:
+    #     print(death)
+    #     b_I = social_bI(bI_0, alpha, death)
+    #     b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
+    #     b_P = c2*b_I #transmission from presympt
+    #     R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
+    #     R0_list.append(R0)
+    # print(R0_list)
+
+
 # you always need to globally define the dataset
 # conf_incidence = define_dataset(12, 21)
 
@@ -312,13 +337,15 @@ conf_incidence = pre_incidence[34:]
 global t
 t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
 
-# k = .5
-# c = 5
-# bI0, alpha = SD_curve_fit(k, c).x
-# cost = SD_curve_fit(k, c).cost
-# plot_for_vals(conf_incidence, bI0, alpha, k, c)
+k = .5
+c = 5
+bI0, alpha = SD_curve_fit(k, c).x
+cost = SD_curve_fit(k, c).status
+print(cost)
+#plot_for_vals(conf_incidence, bI0, alpha, k, c)
+plot_Reffective(k, c)
 
-cost_heatmap()
+# cost_heatmap()
 
 plt.legend()
 plt.show()
