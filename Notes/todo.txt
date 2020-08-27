@@ -1,23 +1,27 @@
 **TODO**
 
-to get R0, define a separate function that takes in death and all of the constant values
-
 feed the differnet BI function forms a dummy set of data and see what results
+get better guesses! latin hypercube sampling, debinfer
+
+
+DONE TODAY:
+- to get R0, define a separate function that takes in death and all of the constant values
+- get R0 and plot it on a time series
+- comparing: muscokogee, georgia (columbus) | richmond city, virginia
+    -R0 comparison figure
+
+
+QUESTIONS/CONCERNS/ISSUES:
+- at the 4 corner parameters, look at the alpha and beta values for each
+- R0 behavior: spikes very high, seems to decrease quite quickly
+- R0 behavior: longer timeframes are producing higher R0 values, to the point of very high for the largest timeframe
+
+--------------------------------------------------------------
+FOR THE FUTURE
+--------------------------------------------------------------
 
 get better guesses! latin hypercube sampling, debinfer
 
-investigate the small timeframe
-    - at the 4 corner parameters, look at the alpha and beta values for each
-    - pull a k and c combination, see what happens to beta (timeseries)
-    - check out the # of symptomatic infections instead of death rate for the equation, see what happens
-
-- get R0 and plot it on a time series
-    - compare to initial R0 estimate (without social distancing)
-    - plot time series
-- look at other counties, see what time series looks like
-- other datasets: muscokogee, georgia (columbus) | jackson, missisipi
-
----
 intreprations of beta function
 
 POSSIBLE BIG QUESTION: how do we deal with r0 when we might be making things worse?

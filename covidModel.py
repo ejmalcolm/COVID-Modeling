@@ -33,9 +33,6 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     b_I = social_bI(bI_0, alpha, D)
     b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
     b_P = c2*b_I #transmission from presympt
-    # ! low asympyomatic hypothesis
-    # b_A = .1 * b_I
-    # b_P = c*b_I
     N = S+E+P+A+I+R+D
     lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
     ###other valsameters###
@@ -53,10 +50,8 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     dIdt = (delt*P) - ((nu + gam_I)*I)
     dRdt = (gam_A*A) + (gam_I*I)
     dDdt = nu*I
-    total_cases = sig*E
-    #calculate R0
-    R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
-    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,R0]
+    dTdt = sig*E
+    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dTdt]
 
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
@@ -67,10 +62,13 @@ def SDmodel(bI_0, alpha, k, c):
     return odeint(ODEmodel, y0, t, (bI_0, alpha, k, c))
 
 
-def gen_time(caseinc, days_after):
+def gen_time(caseinc, days_after,y0):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
-    last_index = first_index+days_after # first day + 3 weeks
-    return caseinc[first_index-14:last_index]
+    last_index = first_index+days_after # first day + however many days after we want
+    conf_incidence = caseinc[first_index-14:last_index] # 14 days before first case
+    global t
+    t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
+    return conf_incidence, t, y0
 
 
 #get the return from curve fit
@@ -82,7 +80,7 @@ def get_curve_fit(k, c):
 
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
-    op = least_squares(resids, [0, -1], args=(conf_incidence,) )
+    op = least_squares(resids, [0, 0], args=(conf_incidence,) )
     return op
 
 
@@ -92,6 +90,7 @@ def get_optimal_bI(k, c):
     op = SD_curve_fit(k, c)
     return op.x
 
+
 #plot model output against given dataset for parameter values
 def plot_for_vals(dataset, bI0, alpha, k, c):
     y = SDmodel(bI0, alpha,k,c)
@@ -100,18 +99,32 @@ def plot_for_vals(dataset, bI0, alpha, k, c):
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
   
-def define_dataset(index, days_after): #change first index to 1=DOC, PHL, NO, SF, Alamos, Honolulu, Juneau, Denver, Muscogee, Fayette
-    TEMP_POPULATIONS = (704749,1526000,343829,881549,12019,974563,31275,600158,195769,323152)
-    global y0
-    # y0 = [TEMP_POPULATIONS[index],1,0,0,0,0,0,0,0] #define 
-    y0 = [1526000,1,0,0,0,0,0,0] # PHL
-    global t
-    t = np.linspace(0,days_after+14,num=days_after+14)
+
+def define_dataset(county, days_after):
+    POPULATIONS = {'Bernalillo' : [1, 679121],
+        'District of Columbia' : [2, 704749],
+        'Denver' : [3, 600158],
+        'Fayette' : [4, 323152],
+        'Hinds' : [5, 231840],
+        'Honolulu' : [6, 974563],
+        'Juneau' : [7, 31275],
+        'Los Alamos' : [8, 12019],
+        'Montgomery' : [9, 98985],
+        'Muscogee' : [10, 195769],
+        'Orleans' : [11, 343829],
+        'Philadelphia' : [12, 1526000],
+        'Richmond City' : [13, 230436],
+        'San Fransisco' : [14, 881549],
+        'Wake' : [15, 1111761],
+    }
+    index = POPULATIONS[county][0]
+    # define y0
+    y0 = [POPULATIONS[county][1],1,0,0,0,0,0,0] # PHL
     #plot already existing case data
     conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][2]) #print the name of the county
     pre_incidence = [float(x) for x in conf_data[index][3:]]
-    return gen_time(pre_incidence,days_after)
+    return gen_time(pre_incidence,days_after,y0) #returns conf incidence, t, y0
 
 
 def bI_heatmap(): #get a heatmap of bI values for a range of k and c values, ranges: 0.1-1 and 1-5
@@ -303,49 +316,34 @@ def plot_Reffective(k, c2):
     gam_I = 1/7 # sympt -> recovered
     gam_A = 1/7 # asympt -> recovered
     nu = gam_I/99 # sympt -> deceased
-    # calculate an array of bI values
-    bI_0, alpha = SD_curve_fit(k, c).x
-    print(bI_0, alpha)
-    y = SDmodel(bI_0, alpha,k,c)
-    deaths = y[:,4]
-    print(deaths)
-    # calculate b_A and b_P
-    # R0_list = []
-    # for death in deaths:
-    #     print(death)
-    #     b_I = social_bI(bI_0, alpha, death)
-    #     b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
-    #     b_P = c2*b_I #transmission from presympt
-    #     R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
-    #     R0_list.append(R0)
-    # print(R0_list)
+    # calculate a bI value through fitting to data
+    bI_0, alpha = SD_curve_fit(k, c2).x
+    print(f'Using bI_0 {bI_0} and alpha {alpha}')
+    # calculate the death array
+    y = SDmodel(bI0, alpha, k, c2)
+    deaths = y[:,6]
+    # calculate a list of R0 values based off the death values
+    R0_list = []
+    for death in deaths:
+        b_I = social_bI(bI_0, alpha, death)
+        b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
+        b_P = c2*b_I #transmission from presympt
+        R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
+        R0_list.append(R0)
+    # plot the R0 list against time
+    f6 = plt.figure(6)
+    # plot the R0 values
+    plt.plot(t, R0_list, label=f'R0: k,c2,bI_0,alpha,={k},{c2},{bI_0.round(2)},{alpha.round(2)}')
 
 
-# you always need to globally define the dataset
-# conf_incidence = define_dataset(12, 21)
-
-global y0
-# richmond pop 230436 , philly 1526000
-y0 = [1526000,1,0,0,0,0,0,0] #define population
-conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
-print(conf_data[12][2]) #print the name of the county
-pre_incidence = [float(x) for x in conf_data[12][3:]]
-
-conf_incidence = pre_incidence[34:]
-# 34-161, units of 42
-
-global t
-t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
-
-k = .5
-c = 5
-bI0, alpha = SD_curve_fit(k, c).x
-cost = SD_curve_fit(k, c).status
-print(cost)
-#plot_for_vals(conf_incidence, bI0, alpha, k, c)
-plot_Reffective(k, c)
-
-# cost_heatmap()
-
-plt.legend()
-plt.show()
+if __name__ == "__main__":
+    # you always need to globally define the dataset
+    conf_incidence, t, y0 = define_dataset('Richmond City', days_after=140)
+    k = .5
+    c2 = 5
+    bI0, alpha = SD_curve_fit(k, c2).x
+    cost = SD_curve_fit(k, c2).cost
+    print(f'Cost is {cost}')
+    plot_for_vals(conf_incidence, bI0, alpha, k, c2)
+    plt.legend()
+    plt.show()
