@@ -1,20 +1,20 @@
-**TODO**
-
+*TODO*
 feed the differnet BI function forms a dummy set of data and see what results
-get better guesses! latin hypercube sampling, debinfer
 
 
-DONE TODAY:
+*DONE TODAY:*
 - to get R0, define a separate function that takes in death and all of the constant values
-- get R0 and plot it on a time series
-- comparing: muscokogee, georgia (columbus) | richmond city, virginia
+- for philadelphia: at the 4 corner parameters, look at the alpha and beta values for each
+    - get R0 and plot it on a time series
+    - ran these comparisons with Fixed alpha/bI0 values and with Fit values
+- do that to compare: muscokogee, georgia (columbus) | richmond city, virginia
     -R0 comparison figure
 
 
-QUESTIONS/CONCERNS/ISSUES:
-- at the 4 corner parameters, look at the alpha and beta values for each
+*QUESTIONS/CONCERNS/ISSUES:*
 - R0 behavior: spikes very high, seems to decrease quite quickly
 - R0 behavior: longer timeframes are producing higher R0 values, to the point of very high for the largest timeframe
+- MCMC: don't we still need to provide a prior for this?
 
 --------------------------------------------------------------
 FOR THE FUTURE

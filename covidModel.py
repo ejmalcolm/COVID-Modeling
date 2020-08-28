@@ -318,6 +318,8 @@ def plot_Reffective(k, c2):
     nu = gam_I/99 # sympt -> deceased
     # calculate a bI value through fitting to data
     bI_0, alpha = SD_curve_fit(k, c2).x
+    # OR use fixed bI0 and alpha values
+    # bI_0, alpha = 0.186, -.257
     print(f'Using bI_0 {bI_0} and alpha {alpha}')
     # calculate the death array
     y = SDmodel(bI0, alpha, k, c2)
@@ -333,17 +335,20 @@ def plot_Reffective(k, c2):
     # plot the R0 list against time
     f6 = plt.figure(6)
     # plot the R0 values
-    plt.plot(t, R0_list, label=f'R0: k,c2,bI_0,alpha,={k},{c2},{bI_0.round(2)},{alpha.round(2)}')
+    plt.plot(t, R0_list, label=f'R0: k,c2,bI_0,alpha,={k},{c2},{round(bI_0, 2)},{round(alpha, 2)}')
 
 
 if __name__ == "__main__":
     # you always need to globally define the dataset
-    conf_incidence, t, y0 = define_dataset('Richmond City', days_after=140)
+    conf_incidence, t, y0 = define_dataset('Philadelphia', days_after=150)
     k = .5
     c2 = 5
     bI0, alpha = SD_curve_fit(k, c2).x
     cost = SD_curve_fit(k, c2).cost
     print(f'Cost is {cost}')
-    plot_for_vals(conf_incidence, bI0, alpha, k, c2)
+    plot_Reffective(.1, 1)
+    plot_Reffective(.1, 5)
+    plot_Reffective(.9, 5)
+    plot_Reffective(.9, 1)
     plt.legend()
     plt.show()
