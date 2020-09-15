@@ -10,6 +10,7 @@ import math
 def social_bI(bI_0, alpha, N):
     try:
         bI = bI_0 * math.pow(N, alpha)
+        # bI = math.pow(bI_0*N, alpha)
     except ValueError:
         bI = 0
     return max(bI, 0)
@@ -27,14 +28,12 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     D = vals[6]
     total_cases = vals[7]
     ###defining lambda###
-    # ! fit asymptomatic transmission
-    if np.isnan(I):
-        quit()
-    b_I = social_bI(bI_0, alpha, D)
+    dDdT = 1/7/99 * I
+    b_I = social_bI(bI_0, alpha, dDdT)
     b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
     b_P = c2*b_I #transmission from presympt
     N = S+E+P+A+I+R+D
-    lamb = (b_A*A + b_P*P + b_I*I)/N #susceptible -> infected
+    lamb = (b_A*A + b_P*P + b_I*I)/N # susceptible -> infected
     ###other valsameters###
     # k = .2 #percentage of exposed -> asymptomatic
     sig = 1/5 #exposed -> presympt/astmpy
@@ -80,7 +79,7 @@ def get_curve_fit(k, c):
 
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
-    op = least_squares(resids, [0, 0], args=(conf_incidence,) )
+    op = least_squares(resids, [1, 0], args=(conf_incidence,) )
     return op
 
 
@@ -319,7 +318,7 @@ def plot_Reffective(k, c2):
     # calculate a bI value through fitting to data
     bI_0, alpha = SD_curve_fit(k, c2).x
     # OR use fixed bI0 and alpha values
-    # bI_0, alpha = 0.186, -.257
+    bI_0, alpha = 0.186, -.257
     print(f'Using bI_0 {bI_0} and alpha {alpha}')
     # calculate the death array
     y = SDmodel(bI0, alpha, k, c2)
@@ -346,9 +345,10 @@ if __name__ == "__main__":
     bI0, alpha = SD_curve_fit(k, c2).x
     cost = SD_curve_fit(k, c2).cost
     print(f'Cost is {cost}')
+    # plot_for_vals(conf_incidence, bI0, alpha, k, c2)
     plot_Reffective(.1, 1)
+    plot_Reffective(.9, 1)
     plot_Reffective(.1, 5)
     plot_Reffective(.9, 5)
-    plot_Reffective(.9, 1)
     plt.legend()
     plt.show()

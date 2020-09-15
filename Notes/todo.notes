@@ -1,14 +1,10 @@
 *TODO*
 feed the differnet BI function forms a dummy set of data and see what results
-
+- data set from florida/somewhere where cases go up->down->up
 
 *DONE TODAY:*
-- to get R0, define a separate function that takes in death and all of the constant values
-- for philadelphia: at the 4 corner parameters, look at the alpha and beta values for each
-    - get R0 and plot it on a time series
-    - ran these comparisons with Fixed alpha/bI0 values and with Fit values
-- do that to compare: muscokogee, georgia (columbus) | richmond city, virginia
-    -R0 comparison figure
+- check Reffective plots for DC, Orleans, Bernalillo
+- try out change in deaths instead of number and see what's happening
 
 
 *QUESTIONS/CONCERNS/ISSUES:*
