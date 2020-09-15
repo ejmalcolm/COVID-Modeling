@@ -325,11 +325,14 @@ def plot_Reffective(k, c2):
     deaths = y[:,6]
     # calculate a list of R0 values based off the death values
     R0_list = []
+    output = open('Figures/R-Effective/Reffective_analysis.csv.txt', 'w')
+    print('bI_0,alpha,new deaths,bI,bA,bP,R0\n', file=output)
     for death in deaths:
         b_I = social_bI(bI_0, alpha, death)
         b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
         b_P = c2*b_I #transmission from presympt
         R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
+        print('%s,%s,%s,%s,%s,%s,%s\n' % (bI_0, alpha, death, b_I, b_A, b_P, R0), file=output)
         R0_list.append(R0)
     # plot the R0 list against time
     f6 = plt.figure(6)
@@ -346,9 +349,6 @@ if __name__ == "__main__":
     cost = SD_curve_fit(k, c2).cost
     print(f'Cost is {cost}')
     # plot_for_vals(conf_incidence, bI0, alpha, k, c2)
-    plot_Reffective(.1, 1)
-    plot_Reffective(.9, 1)
-    plot_Reffective(.1, 5)
-    plot_Reffective(.9, 5)
+    plot_Reffective(.5,5)
     plt.legend()
     plt.show()
