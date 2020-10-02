@@ -1,16 +1,23 @@
-*TODO*
-feed the differnet BI function forms a dummy set of data and see what results
-- data set from florida/somewhere where cases go up->down->up
-
-*DONE TODAY:*
-- check Reffective plots for DC, Orleans, Bernalillo
-- try out change in deaths instead of number and see what's happening
+TODO
 
 
-*QUESTIONS/CONCERNS/ISSUES:*
-- R0 behavior: spikes very high, seems to decrease quite quickly
-- R0 behavior: longer timeframes are producing higher R0 values, to the point of very high for the largest timeframe
-- MCMC: don't we still need to provide a prior for this?
+
+DONE
+- tried using beta_I as one of the "output classes"
+  - dBIdt = alpha*I - epsilon*BI
+  - alpha is being fit to 0, epsilon to ~0.066. slow but constant decay
+  - tried many initial conditions, this is best outcome
+  - actually not a bad fit, just still does not produces expected behavior
+  - possible issue with the form itself?
+
+- possible issue with functional form: bI = bI_0 * N^alpha
+  - if N is a negative number, which it could be if we pass change in deaths or change in infections
+  - and alpha is fractional, we get complex results
+  - right now, i have it set to return 0 in any case like this, but could be throwing things off
+
+- graphing R-effective values as proportional to the fraction of the susceptible population:
+  - indicates that the problem probably is in the functional form
+  - more "expected" results when using a fixed BI value, not using the social_BI function
 
 --------------------------------------------------------------
 FOR THE FUTURE
@@ -25,10 +32,6 @@ POSSIBLE BIG QUESTION: how do we deal with r0 when we might be making things wor
 ESTIMATING R-EFFECTIVE
 - r_effective = r0 under control measures
 - in terms of different cities
-
-infectious immigration rate?
-
-hospitalized class?
 
 - other methods of talking r0?
     - non-immunity granting diseases, how do they calculate r0

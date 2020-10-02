@@ -10,15 +10,21 @@ import math
 def social_bI(bI_0, alpha, N):
     try:
         bI = bI_0 * math.pow(N, alpha)
-        # bI = math.pow(bI_0*N, alpha)
     except ValueError:
         bI = 0
     return max(bI, 0)
 
 
 # def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
-def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
-    #unpack
+# def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
+def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
+    ###other parameters###
+    sig = 1/5 #exposed -> presympt/astmpy
+    delt = 1/2 #pre-sympt -> sympt
+    gam_I = 1/7 #sympt -> recovered
+    gam_A = 1/7 #asympt -> recovered
+    nu = gam_I/99 #sympt -> deceased
+    ###unpack###
     S = vals[0]
     E = vals[1]
     A = vals[2]
@@ -26,21 +32,14 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     I = vals[4]
     R = vals[5]
     D = vals[6]
-    total_cases = vals[7]
+    # use only if we're using dBIdt as one of the outputs
+    b_I = max(0, vals[7])
     ###defining lambda###
-    dDdT = 1/7/99 * I
-    b_I = social_bI(bI_0, alpha, dDdT)
-    b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
-    b_P = c2*b_I #transmission from presympt
+    # b_I = social_bI(bI_0, alpha, D)
+    b_A = 0.5*b_I
+    b_P = c2*b_I
     N = S+E+P+A+I+R+D
-    lamb = (b_A*A + b_P*P + b_I*I)/N # susceptible -> infected
-    ###other valsameters###
-    # k = .2 #percentage of exposed -> asymptomatic
-    sig = 1/5 #exposed -> presympt/astmpy
-    delt = 1/2 #pre-sympt -> sympt
-    gam_I = 1/7 #sympt -> recovered
-    gam_A = 1/7 #asympt -> recovered
-    nu = gam_I/99 #sympt -> deceased
+    lamb = (b_A*A + b_P*P + b_I*I)/N
     ###stuff to return###
     dSdt = (-lamb*S)
     dEdt = (lamb*S) - (sig*E)
@@ -49,8 +48,8 @@ def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
     dIdt = (delt*P) - ((nu + gam_I)*I)
     dRdt = (gam_A*A) + (gam_I*I)
     dDdt = nu*I
-    dTdt = sig*E
-    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dTdt]
+    dBIdt = alpha*I - epsilon*b_I
+    return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dBIdt]
 
 
 def model(beta_I, k, c): #function that allows us to call the odeint solver with more readability
@@ -79,7 +78,7 @@ def get_curve_fit(k, c):
 
 def SD_curve_fit(k, c):
     resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
-    op = least_squares(resids, [1, 0], args=(conf_incidence,) )
+    op = least_squares(resids, [0, 0], args=(conf_incidence,) )
     return op
 
 
@@ -118,7 +117,7 @@ def define_dataset(county, days_after):
     }
     index = POPULATIONS[county][0]
     # define y0
-    y0 = [POPULATIONS[county][1],1,0,0,0,0,0,0] # PHL
+    y0 = [POPULATIONS[county][1],1,0,0,0,0,0,1.9] # PHL
     #plot already existing case data
     conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][2]) #print the name of the county
@@ -316,24 +315,23 @@ def plot_Reffective(k, c2):
     gam_A = 1/7 # asympt -> recovered
     nu = gam_I/99 # sympt -> deceased
     # calculate a bI value through fitting to data
-    bI_0, alpha = SD_curve_fit(k, c2).x
+    # bI_0, alpha = SD_curve_fit(k, c2).x
     # OR use fixed bI0 and alpha values
     bI_0, alpha = 0.186, -.257
     print(f'Using bI_0 {bI_0} and alpha {alpha}')
     # calculate the death array
-    y = SDmodel(bI0, alpha, k, c2)
-    deaths = y[:,6]
+    y = SDmodel(bI_0, alpha, k, c2)
+    S, E, A, P, I, R, D = y[:,0], y[:,1], y[:,2], y[:,3], y[:,4], y[:,5], y[:,6]
     # calculate a list of R0 values based off the death values
     R0_list = []
-    output = open('Figures/R-Effective/Reffective_analysis.csv.txt', 'w')
-    print('bI_0,alpha,new deaths,bI,bA,bP,R0\n', file=output)
-    for death in deaths:
-        b_I = social_bI(bI_0, alpha, death)
+    for i in range(len(S)):
+        b_I = social_bI(bI_0, alpha, D[i])
+        b_I = 2
         b_A = 0.5*b_I #transmission from asympt as a a small fraction of symptomatic infection
         b_P = c2*b_I #transmission from presympt
         R0 = ( (1-k)*sig ) * ( (b_I / (gam_I+nu) ) + ( (b_P) / delt )) + ( k*sig * ( (b_A)/gam_A ) )
-        print('%s,%s,%s,%s,%s,%s,%s\n' % (bI_0, alpha, death, b_I, b_A, b_P, R0), file=output)
-        R0_list.append(R0)
+        Reffective = R0*( S[i]/(sum([S[i],E[i],A[i],P[i],I[i],R[i],D[i]])) )
+        R0_list.append(Reffective)
     # plot the R0 list against time
     f6 = plt.figure(6)
     # plot the R0 values
@@ -343,12 +341,11 @@ def plot_Reffective(k, c2):
 if __name__ == "__main__":
     # you always need to globally define the dataset
     conf_incidence, t, y0 = define_dataset('Philadelphia', days_after=150)
-    k = .5
-    c2 = 5
-    bI0, alpha = SD_curve_fit(k, c2).x
+    k = .2
+    c2 = 1
+    alpha, epsilon = SD_curve_fit(k, c2).x
     cost = SD_curve_fit(k, c2).cost
     print(f'Cost is {cost}')
-    # plot_for_vals(conf_incidence, bI0, alpha, k, c2)
-    plot_Reffective(.5,5)
+    plot_for_vals(conf_incidence, alpha, epsilon, k, c2)
     plt.legend()
     plt.show()
