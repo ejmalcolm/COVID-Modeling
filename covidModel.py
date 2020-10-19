@@ -35,7 +35,8 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     # use only if we're using dBIdt as one of the outputs
     b_I = max(0, vals[7])
     ###defining lambda###
-    # b_I = social_bI(bI_0, alpha, D)
+    # * alpha = bi_0, epsilon = scaling factor
+    # b_I = social_bI(alpha, epsilon, D)
     b_A = 0.5*b_I
     b_P = c2*b_I
     N = S+E+P+A+I+R+D
@@ -48,6 +49,7 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     dIdt = (delt*P) - ((nu + gam_I)*I)
     dRdt = (gam_A*A) + (gam_I*I)
     dDdt = nu*I
+    # dBIdt = alpha*I - epsilon*b_I
     dBIdt = alpha*I - epsilon*b_I
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dBIdt]
 
@@ -64,6 +66,12 @@ def gen_time(caseinc, days_after,y0):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
     last_index = first_index+days_after # first day + however many days after we want
     conf_incidence = caseinc[first_index-14:last_index] # 14 days before first case
+
+    # TODO: fake data insertion
+    # conf_incidence = [100*(math.sin(0.05*k)) for k,v in enumerate(conf_incidence)]
+    # conf_incidence = [max(x, 0) for x in conf_incidence]
+    # TODO: fake data insertion
+
     global t
     t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
     return conf_incidence, t, y0
@@ -119,7 +127,7 @@ def define_dataset(county, days_after):
     # define y0
     y0 = [POPULATIONS[county][1],1,0,0,0,0,0,1.9] # PHL
     #plot already existing case data
-    conf_data = np.genfromtxt('COVID_city_county_new.csv', dtype=str,delimiter=",") #this is the incidence
+    conf_data = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][2]) #print the name of the county
     pre_incidence = [float(x) for x in conf_data[index][3:]]
     return gen_time(pre_incidence,days_after,y0) #returns conf incidence, t, y0
@@ -340,7 +348,7 @@ def plot_Reffective(k, c2):
 
 if __name__ == "__main__":
     # you always need to globally define the dataset
-    conf_incidence, t, y0 = define_dataset('Philadelphia', days_after=150)
+    conf_incidence, t, y0 = define_dataset('Wake', days_after=200)
     k = .2
     c2 = 1
     alpha, epsilon = SD_curve_fit(k, c2).x

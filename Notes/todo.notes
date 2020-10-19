@@ -1,27 +1,19 @@
-TODO
-
-
-
 DONE
-- tried using beta_I as one of the "output classes"
-  - dBIdt = alpha*I - epsilon*BI
-  - alpha is being fit to 0, epsilon to ~0.066. slow but constant decay
-  - tried many initial conditions, this is best outcome
-  - actually not a bad fit, just still does not produces expected behavior
-  - possible issue with the form itself?
+using wake county data: does not match the initial curve at all, only tries to match the second part of the curve
 
-- possible issue with functional form: bI = bI_0 * N^alpha
-  - if N is a negative number, which it could be if we pass change in deaths or change in infections
-  - and alpha is fractional, we get complex results
-  - right now, i have it set to return 0 in any case like this, but could be throwing things off
+analyzing fake data: model output vs. social distance
+- model output function only tries to capture the end part of the trend
+- social distance (exponential) captures initial peak
 
-- graphing R-effective values as proportional to the fraction of the susceptible population:
-  - indicates that the problem probably is in the functional form
-  - more "expected" results when using a fixed BI value, not using the social_BI function
+ran through different factors we can put into the dBIdt terms!
+  - show what it looks like with alpha*I, alpha*dIdt, alpha*D, alpha*dDdt
 
 --------------------------------------------------------------
 FOR THE FUTURE
 --------------------------------------------------------------
+
+beta_I median lit value: 0.23
+
 
 get better guesses! latin hypercube sampling, debinfer
 
