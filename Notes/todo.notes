@@ -1,28 +1,8 @@
 TODO)
 
-different equations for social distancing function
-
-equations 4, 5, 8, 9
-equation 6: make sure A and B are most positive
-
-a/(1+b*N^(c))
-
-try putting in a polynomial
-
-- modify the sin curve data so that it doesnt reach zero (max(sinx, 10))
-
-produce an Reffective value from the test value
-
-
-DONE
-using wake county data: does not match the initial curve at all, only tries to match the second part of the curve
-
-analyzing fake data: model output vs. social distance
-- model output function only tries to capture the end part of the trend
-- social distance (exponential) captures initial peak
-
-ran through different factors we can put into the dBIdt terms!
-  - show what it looks like with alpha*I, alpha*dIdt, alpha*D, alpha*dDdt
+-- review all the different things we tried
+-- hypothesis: function needs some sort of time decay
+  -- there may be an attrition rate, independent of any case data
 
 --------------------------------------------------------------
 FOR THE FUTURE
