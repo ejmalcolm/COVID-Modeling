@@ -6,18 +6,19 @@ from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 import math
 
+peaks = True
 
-def social_bI(bI_0, alpha, N):
+def social_bI(a, b, N, t):
     try:
-        bI = bI_0 * math.pow(N, alpha)
-    except ValueError:
-        bI = 0
+      bI = a*N+b
+    except ValueError as e:
+      print(e)
+      bI = 0
     return max(bI, 0)
 
 
-# def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
-# def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
-def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
+def ODEmodel(vals, t, alpha, epsilon, omicron, k, c2, mxstep=50000, full_output=1):
+# def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     ###other parameters###
     sig = 1/5 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
@@ -36,7 +37,7 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     b_I = max(0, vals[7])
     ###defining lambda###
     # * alpha = bi_0, epsilon = scaling factor
-    # b_I = social_bI(alpha, epsilon, D)
+    b_I = social_bI(alpha, epsilon, D, t)
     b_A = 0.5*b_I
     b_P = c2*b_I
     N = S+E+P+A+I+R+D
@@ -49,8 +50,7 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     dIdt = (delt*P) - ((nu + gam_I)*I)
     dRdt = (gam_A*A) + (gam_I*I)
     dDdt = nu*I
-    # dBIdt = alpha*I - epsilon*b_I
-    dBIdt = alpha*I - epsilon*b_I
+    dBIdt = 0 # alpha*I - epsilon*b_I
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dBIdt]
 
 
@@ -68,8 +68,11 @@ def gen_time(caseinc, days_after,y0):
     conf_incidence = caseinc[first_index-14:last_index] # 14 days before first case
 
     # TODO: fake data insertion
-    # conf_incidence = [100*(math.sin(0.05*k)) for k,v in enumerate(conf_incidence)]
-    # conf_incidence = [max(x, 0) for x in conf_incidence]
+    if peaks:
+      conf_incidence = [50*(math.sin(0.025*k)) for k,v in enumerate(conf_incidence)]
+      buffer = [0 for x in conf_incidence]
+      conf_incidence = (conf_incidence + buffer*2 + conf_incidence)
+      conf_incidence = [max(x, 1) for x in conf_incidence]
     # TODO: fake data insertion
 
     global t
@@ -101,7 +104,7 @@ def get_optimal_bI(k, c):
 def plot_for_vals(dataset, bI0, alpha, k, c):
     y = SDmodel(bI0, alpha,k,c)
     f5 = plt.figure(5)
-    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c}')
+    f5.suptitle(f'a={round(bI0, 3)}, b={round(alpha, 3)}, k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
   
