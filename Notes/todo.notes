@@ -1,8 +1,16 @@
 TODO)
 
--- review all the different things we tried
--- hypothesis: function needs some sort of time decay
-  -- there may be an attrition rate, independent of any case data
+-- we're seeing double peak phenomenom!
+  - accomplished very basically
+  - simply "boosting" the bI value by a fraction of the time that has passed
+  - bI = f(N) + g(t)
+  - TWO DIFFERENT METHODS:
+    - model output, which causes some strange results
+    - in social distancing function, which is more predictable
+  - both have the same problem: eventually the bI gets absurdly high as time goes on
+
+
+-- latin hypercube sampling-- we need to be more sure of our guesses
 
 --------------------------------------------------------------
 FOR THE FUTURE
@@ -25,4 +33,3 @@ ESTIMATING R-EFFECTIVE
     - non-immunity granting diseases, how do they calculate r0
     - "waning immunity"
 - testing rate problems? 
---

@@ -6,27 +6,28 @@ from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 import math
 
+guesses = [0, 0, 0]
+replace_data_with_peaks = False
 
-def social_bI(bI_0, alpha, N):
+def social_bI(a, b, c, N, t):
     try:
-        bI = a*N + b
-        if t > c:
-    except ValueError:
-        bI = 0
+      bI = a*N+b
+    except ValueError as e:
+      print(e)
+      bI = 0
     return max(bI, 0)
 
 
-# def ODEmodel(vals, t, b_I, k, c, mxstep=50000):
-# def ODEmodel(vals, t, bI_0, alpha, k, c2, mxstep=50000, full_output=1):
-def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
-
+def ODEmodel(vals, t, alpha, epsilon, omicron, k, c2, mxstep=50000, full_output=1):
+# def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
+    
     ###other parameters###
     sig = 1/5 #exposed -> presympt/astmpy
     delt = 1/2 #pre-sympt -> sympt
     gam_I = 1/7 #sympt -> recovered
     gam_A = 1/7 #asympt -> recovered
     nu = gam_I/99 #sympt -> deceased
-
+    
     ###unpack###
     S = vals[0]
     E = vals[1]
@@ -35,17 +36,21 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     I = vals[4]
     R = vals[5]
     D = vals[6]
+    N = S+E+P+A+I+R+D
 
     # use only if we're using dBIdt as one of the outputs
     b_I = max(0, vals[7])
-
+    
     ###defining lambda###
-    # b_I = social_bI(bI_0, alpha, D)
+    
+    # * alpha = bi_0, epsilon = scaling factor
+    b_I = social_bI(alpha, epsilon, omicron, D, t)
+    b_I = b_I + omicron*t
+    
     b_A = 0.5*b_I
     b_P = c2*b_I
-    N = S+E+P+A+I+R+D
     lamb = (b_A*A + b_P*P + b_I*I)/N
-
+    
     ###stuff to return###
     dSdt = (-lamb*S)
     dEdt = (lamb*S) - (sig*E)
@@ -54,8 +59,8 @@ def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
     dIdt = (delt*P) - ((nu + gam_I)*I)
     dRdt = (gam_A*A) + (gam_I*I)
     dDdt = nu*I
-    dBIdt = alpha*I - epsilon*b_I
-
+    dBIdt = alpha*(dDdt) - epsilon*b_I + omicron*t
+    
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dBIdt]
 
 
@@ -63,14 +68,23 @@ def model(beta_I, k, c): #function that allows us to call the odeint solver with
     return odeint(ODEmodel, y0, t, (beta_I, k, c))
 
 
-def SDmodel(bI_0, alpha, k, c):
-    return odeint(ODEmodel, y0, t, (bI_0, alpha, k, c))
+def SDmodel(alpha, epsilon, omicron, k, c):
+    return odeint(ODEmodel, y0, t, (alpha, epsilon, omicron, k, c))
 
 
 def gen_time(caseinc, days_after,y0):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
     last_index = first_index+days_after # first day + however many days after we want
     conf_incidence = caseinc[first_index-14:last_index] # 14 days before first case
+
+    # TODO: fake data insertion
+    if replace_data_with_peaks:
+      conf_incidence = [50*(math.sin(0.025*k)) for k,v in enumerate(conf_incidence)]
+      buffer = [0 for x in conf_incidence]
+      conf_incidence = (conf_incidence + buffer)*5
+      conf_incidence = [max(x, 1) for x in conf_incidence]
+    # TODO: fake data insertion
+
     global t
     t = np.linspace(0,len(conf_incidence),num=len(conf_incidence))
     return conf_incidence, t, y0
@@ -84,23 +98,23 @@ def get_curve_fit(k, c):
 
 
 def SD_curve_fit(k, c):
-    resids = lambda params, data: (SDmodel(params[0], params[1], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
-    op = least_squares(resids, [0, 0], args=(conf_incidence,) )
+    resids = lambda params, data: (SDmodel(params[0], params[1], params[2], k, c)[:,4] - data) #have to use this to fix k and c so that they're not part of the curve fitting function
+    op = least_squares(resids, guesses, args=(conf_incidence,) )
     return op
 
 
 #general form to get the optimal B_I from curve fit
 def get_optimal_bI(k, c):
-    # ! change
     op = SD_curve_fit(k, c)
     return op.x
 
 
 #plot model output against given dataset for parameter values
-def plot_for_vals(dataset, bI0, alpha, k, c):
-    y = SDmodel(bI0, alpha,k,c)
+def plot_for_vals(dataset, alpha, epsilon, omicron, k, c):
+    y = SDmodel(alpha, epsilon, omicron, k, c)
+    print(y[:,7])
     f5 = plt.figure(5)
-    f5.suptitle(f'bI0={round(bI0, 3)}, alpha={round(alpha, 3)}, k={k}, c={c}')
+    f5.suptitle(f'Alp={round(alpha, 3)}, Eps={round(epsilon, 3)}, Omi={round(omicron, 3)} k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
   
@@ -119,7 +133,7 @@ def define_dataset(county, days_after):
         'Orleans' : [11, 343829],
         'Philadelphia' : [12, 1526000],
         'Richmond City' : [13, 230436],
-        'San Fransisco' : [14, 881549],
+        'San Francisco' : [14, 881549],
         'Wake' : [15, 1111761],
     }
     index = POPULATIONS[county][0]
@@ -347,12 +361,12 @@ def plot_Reffective(k, c2):
 
 if __name__ == "__main__":
     # you always need to globally define the dataset
-    conf_incidence, t, y0 = define_dataset('Wake', days_after=250)
+    conf_incidence, t, y0 = define_dataset('District of Columbia', days_after=200)
     k = .2
     c2 = 1
-    alpha, epsilon = SD_curve_fit(k, c2).x
+    alpha, epsilon, omicron = SD_curve_fit(k, c2).x
     cost = SD_curve_fit(k, c2).cost
     print(f'Cost is {cost}')
-    plot_for_vals(conf_incidence, alpha, epsilon, k, c2)
+    plot_for_vals(conf_incidence, alpha, epsilon, omicron, k, c2)
     plt.legend()
     plt.show()
