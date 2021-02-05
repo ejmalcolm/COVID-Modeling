@@ -7,13 +7,12 @@ from scipy.optimize import curve_fit, least_squares
 import math
 
 
-def social_bI(alpha, epsilon, N):
-    try:
-        bI = alpha*N + epsilon
-    except ValueError:
-        bI = 0
-    return max(bI, 0)
-
+# def social_bI(alpha, epsilon, N):
+#     try:
+#         bI = alpha*N + epsilon
+#     except ValueError:
+#         bI = 0
+#     return max(bI, 0)
 
 def ODEmodel(vals, t, alpha, epsilon):
 
@@ -36,13 +35,13 @@ def ODEmodel(vals, t, alpha, epsilon):
     R_u = vals[5]
     D_u = vals[6]
     
-    S_d = vals[0]
-    E_d = vals[1]
-    A_d = vals[2]
-    P_d = vals[3]
-    I_d = vals[4]
-    R_d = vals[5]
-    D_d = vals[6]
+    S_d = vals[7]
+    E_d = vals[8]
+    A_d = vals[9]
+    P_d = vals[10]
+    I_d = vals[11]
+    R_d = vals[12]
+    D_d = vals[13]
 
     ###defining lambda###
     b_Iu = alpha
@@ -52,7 +51,6 @@ def ODEmodel(vals, t, alpha, epsilon):
     b_Id = epsilon
     b_Ad = 0.5*b_Id
     b_Pd = b_Id
-
 
     N = S_u+E_u+P_u+A_u+I_u+R_u+D_u + S_d+E_d+P_d+A_d+I_d+R_d+D_d
 
@@ -86,7 +84,6 @@ def ODEmodel(vals, t, alpha, epsilon):
 def SDmodel(alpha, epsilon):
     return odeint(ODEmodel, y0, t, (alpha, epsilon))
 
-
 def gen_time(caseinc, days_after,y0):
     first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
     last_index = first_index+days_after # first day + however many days after we want
@@ -100,20 +97,23 @@ def SD_curve_fit():
     op = least_squares(resids, [0, 0], args=(conf_incidence,) )
     return op
 
-
 #general form to get the optimal B_I from curve fit
 def get_optimal_bI():
     op = SD_curve_fit()
     return op.x
-
 
 #plot model output against given dataset for parameter values
 def plot_for_vals(dataset, alpha, epsilon):
     y = SDmodel(alpha, epsilon)
     f5 = plt.figure(5)
     f5.suptitle(f'b_Iu={alpha}, B_Id={epsilon}')
-    plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
+    
+    plt.plot(t, y[:,4], label='Predicted Symptomatic Noncompliant') #plot the model's symptomatic infections
+    
     plt.plot(t, conf_incidence, label='Actual Symptomatic') #plot the actual symptomatic infections
+    
+    plt.plot(t, y[:,11], label='Predicted Symptomatic Compliant') #plot the model's symptomatic infections
+    plt.plot(t, y[:,4]+y[:,11], label='Total Symptomatic Cases')
   
 
 def define_dataset(county, days_after):
