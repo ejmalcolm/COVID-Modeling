@@ -1,16 +1,24 @@
 TODO)
 
--- we're seeing double peak phenomenom!
-  - accomplished very basically
-  - simply "boosting" the bI value by a fraction of the time that has passed
-  - bI = f(N) + g(t)
-  - TWO DIFFERENT METHODS:
-    - model output, which causes some strange results
-    - in social distancing function, which is more predictable
-  - both have the same problem: eventually the bI gets absurdly high as time goes on
+split into compliant and non-compliant population
+- movement between the two populations: into compliance based on deaths, into non-compliant based on time
+
+move to r-effective: how does it work in waves of social distancing
 
 
--- latin hypercube sampling-- we need to be more sure of our guesses
+
+
+
+---
+
+detect local peaks:
+- take a look at the documentation for the ODEmodel and see if we can turn up the granularity of the points sampled
+  - resolution of integral of integration
+  - max step (mxstep?)
+  - step size
+
+maybe just look after the model has run in the first place
+subtract (n - (n+1)), look for where its close to 0
 
 --------------------------------------------------------------
 FOR THE FUTURE

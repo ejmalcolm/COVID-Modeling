@@ -17,6 +17,10 @@ def social_bI(a, b, c, N, t):
       bI = 0
     return max(bI, 0)
 
+last_peak_time = 0
+def store_last_peak(time):
+  global last_peak_time
+  last_peak_time = time
 
 def ODEmodel(vals, t, alpha, epsilon, omicron, k, c2, mxstep=50000, full_output=1):
 # def ODEmodel(vals, t, alpha, epsilon, k, c2, mxstep=50000, full_output=1):
@@ -44,13 +48,14 @@ def ODEmodel(vals, t, alpha, epsilon, omicron, k, c2, mxstep=50000, full_output=
     ###defining lambda###
     
     # * alpha = bi_0, epsilon = scaling factor
+
     b_I = social_bI(alpha, epsilon, omicron, D, t)
-    b_I = b_I + omicron*t
+    b_I = b_I + omicron*(t-last_peak_time)
     
+
     b_A = 0.5*b_I
     b_P = c2*b_I
     lamb = (b_A*A + b_P*P + b_I*I)/N
-    
     ###stuff to return###
     dSdt = (-lamb*S)
     dEdt = (lamb*S) - (sig*E)
@@ -61,6 +66,15 @@ def ODEmodel(vals, t, alpha, epsilon, omicron, k, c2, mxstep=50000, full_output=
     dDdt = nu*I
     dBIdt = alpha*(dDdt) - epsilon*b_I + omicron*t
     
+    # check if this is a peak
+    if (-0.01 < dIdt < 0.01):
+      # print(t)
+      # store_last_peak(t)
+      pass
+
+    if 59 < t < 61:
+      print(t, dIdt)
+
     return [dSdt,dEdt,dAdt,dPdt,dIdt,dRdt,dDdt,dBIdt]
 
 
@@ -112,7 +126,6 @@ def get_optimal_bI(k, c):
 #plot model output against given dataset for parameter values
 def plot_for_vals(dataset, alpha, epsilon, omicron, k, c):
     y = SDmodel(alpha, epsilon, omicron, k, c)
-    print(y[:,7])
     f5 = plt.figure(5)
     f5.suptitle(f'Alp={round(alpha, 3)}, Eps={round(epsilon, 3)}, Omi={round(omicron, 3)} k={k}, c={c}')
     plt.plot(t, y[:,4], label='Predicted Symptomatic') #plot the model's symptomatic infections
@@ -364,9 +377,17 @@ if __name__ == "__main__":
     conf_incidence, t, y0 = define_dataset('District of Columbia', days_after=200)
     k = .2
     c2 = 1
-    alpha, epsilon, omicron = SD_curve_fit(k, c2).x
-    cost = SD_curve_fit(k, c2).cost
-    print(f'Cost is {cost}')
+    
+    # curve fitting
+    # alpha, epsilon, omicron = SD_curve_fit(k, c2).x
+    # cost = SD_curve_fit(k, c2).cost
+    # print(f'Cost is {cost}')
+
+    # plotting
+    # standard values: alpha = -.112, epsilon = .406, omicron= .001
+    alpha = -.112
+    epsilon = .406
+    omicron = .001
     plot_for_vals(conf_incidence, alpha, epsilon, omicron, k, c2)
     plt.legend()
     plt.show()
