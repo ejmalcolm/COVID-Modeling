@@ -1,7 +1,29 @@
 TODO)
 
-split into compliant and non-compliant population
-- movement between the two populations: into compliance based on deaths, into non-compliant based on time
+# dSudt = -lambda*Su - f(x)*Su + g(x)*Sd
+where f(x) = transition to distanced and g(x) = transition to undistanced
+f(x) = alpha*(1-e^(-gamma*x))
+g(x) = a*(1-e^(-b*t)) [maybe go piecewise here]
+or g(x) = a*e^(b*I) # a=how fast somebody changes their mind, where 1/2 = 2 days
+
+NEED TO SPLIT INTO TWO LAMBDAS
+
+lambda_undistanced = c_d*B_i_d + C_u*B_u*I_u
+have B_Id be a factor of B_Iu
+
+have a c_i,j term that calculates transmission rate between undistanced/distanced, distanced/distanced, undistanced/undistanced
+
+lambda_ud = (C_ud*I_d + C_ud*I_u) (B/N) # for all classes
+lambda_u = lambda_du + lambda_uu
+
+could also have a term that modulates how infectious the symptomatic is
+
+just have one beta value that goes on the outside, c_ij takes care of the individual differences in everything
+
+
+
+
+
 
 move to r-effective: how does it work in waves of social distancing
 

@@ -6,80 +6,97 @@ from scipy.integrate import odeint
 from scipy.optimize import curve_fit, least_squares
 import math
 
-
-# def social_bI(alpha, epsilon, N):
-#     try:
-#         bI = alpha*N + epsilon
-#     except ValueError:
-#         bI = 0
-#     return max(bI, 0)
-
 def ODEmodel(vals, t, alpha, epsilon):
 
-    ###other parameters###
-    sig = 1/5 #exposed -> presympt/astmpy
-    delt = 1/2 #pre-sympt -> sympt
-    gam_I = 1/7 #sympt -> recovered
-    gam_A = 1/7 #asympt -> recovered
-    nu = gam_I/99 #sympt -> deceased
+  ###other parameters###
+  sig = 1/5 #exposed -> presympt/astmpy
+  delt = 1/2 #pre-sympt -> sympt
+  gam_I = 1/7 #sympt -> recovered
+  gam_A = 1/7 #asympt -> recovered
+  nu = gam_I/99 #sympt -> deceased
 
-    k = .5 # percentage asymptomatic
+  k = .5 # percentage asymptomatic
 
-    ###unpack###
-    # two groups here: U for undistanced and D for distanced
-    S_u = vals[0]
-    E_u = vals[1]
-    A_u = vals[2]
-    P_u = vals[3]
-    I_u = vals[4]
-    R_u = vals[5]
-    D_u = vals[6]
-    
-    S_d = vals[7]
-    E_d = vals[8]
-    A_d = vals[9]
-    P_d = vals[10]
-    I_d = vals[11]
-    R_d = vals[12]
-    D_d = vals[13]
+  ###unpack###
+  # two groups here: U for undistanced and D for distanced
+  S_u = vals[0]
+  E_u = vals[1]
+  A_u = vals[2]
+  P_u = vals[3]
+  I_u = vals[4]
+  R_u = vals[5]
+  D_u = vals[6]
+  
+  S_d = vals[7]
+  E_d = vals[8]
+  A_d = vals[9]
+  P_d = vals[10]
+  I_d = vals[11]
+  R_d = vals[12]
+  D_d = vals[13]
 
-    ###defining lambda###
-    b_Iu = alpha
-    b_Au = 0.5*b_Iu
-    b_Pu = b_Iu
+  ###defining lambda###
+  b_I = alpha
 
-    b_Id = epsilon
-    b_Ad = 0.5*b_Id
-    b_Pd = b_Id
+  # b_Iu = alpha
+  # b_Au = 0.5*b_Iu
+  # b_Pu = b_Iu
 
-    N = S_u+E_u+P_u+A_u+I_u+R_u+D_u + S_d+E_d+P_d+A_d+I_d+R_d+D_d
+  # b_Id = epsilon
+  # b_Ad = 0.5*b_Id
+  # b_Pd = b_Id
+  # lamb = ((b_Au*A_u + b_Pu*P_u + b_Iu*I_u) + (b_Ad*A_d + b_Pd*P_d + b_Id*I_d)) /N
 
-    lamb = ((b_Au*A_u + b_Pu*P_u + b_Iu*I_u) + (b_Ad*A_d + b_Pd*P_d + b_Id*I_d)) /N
+  N = S_u+E_u+P_u+A_u+I_u+R_u+D_u + S_d+E_d+P_d+A_d+I_d+R_d+D_d
 
-    ###stuff to return###
+  # there's a 2x2 square
+  # ----U---|---D---|
+  # U   1   |   .5  |
+  # --------|-------|
+  # D   .5  | .125  |
+  # --------|-------|
 
-    # undistanced group #
-    dS_udt = (-lamb * S_u)
-    dE_udt = (lamb * S_u) - (sig * E_u)
-    dA_udt = (k * sig * E_u) - (gam_A * A_u)
-    dP_udt = ( (1-k) * sig * E_u) - (delt * P_u)
-    dI_udt = (delt * P_u) - ( (nu + gam_I) * I_u)
-    dR_udt = (gam_A * A_u) + (gam_I * I_u)
-    dD_udt = nu * I_u
+  c_uu = 1
+  c_ud = 0.5
+  c_dd = 0.125
 
-    # distanced group #
-    dS_ddt = (-lamb * S_d)
-    dE_ddt = (lamb * S_d) - (sig * E_d)
-    dA_ddt = (k * sig * E_d) - (gam_A * A_d)
-    dP_ddt = ( (1-k) * sig * E_d) - (delt * P_d)
-    dI_ddt = (delt * P_d) - ( (nu + gam_I) * I_d)
-    dR_ddt = (gam_A * A_d) + (gam_I * I_d)
-    dD_ddt = nu * I_d
+  lamb_uu = (c_uu*I_u) * (b_I/N)
+  lamb_dd = (c_dd*I_d) * (b_I/N)
+  lamb_ud = (c_ud*I_d + c_ud*I_u) * (b_I/N)
+
+  lamb_u = lamb_uu + lamb_ud
+  lamb_d = lamb_dd + lamb_ud
+
+  ###stuff to return###
+
+  # transition functions
+  def become_distanced(death_count):
+    return 1/7 * (1 - math.exp(-epsilon*death_count))
+
+  def become_undistanced(death_count):
+    return 1/7 * math.exp(epsilon*death_count)
+
+  # undistanced group #
+  dS_udt = (-lamb_u * S_u) - become_distanced(D_u+D_d)*S_u + become_undistanced(D_u+D_d)*S_d
+  dE_udt = (lamb_u * S_u) - (sig * E_u)
+  dA_udt = (k * sig * E_u) - (gam_A * A_u)
+  dP_udt = ( (1-k) * sig * E_u) - (delt * P_u)
+  dI_udt = (delt * P_u) - ( (nu + gam_I) * I_u)
+  dR_udt = (gam_A * A_u) + (gam_I * I_u)
+  dD_udt = nu * I_u
+
+  # distanced group #
+  dS_ddt = (-lamb_d * S_d) + become_distanced(D_u+D_d)*S_u# - become_undistanced(D_u+D_d)*S_u
+  dE_ddt = (lamb_d * S_d) - (sig * E_d)
+  dA_ddt = (k * sig * E_d) - (gam_A * A_d)
+  dP_ddt = ( (1-k) * sig * E_d) - (delt * P_d)
+  dI_ddt = (delt * P_d) - ( (nu + gam_I) * I_d)
+  dR_ddt = (gam_A * A_d) + (gam_I * I_d)
+  dD_ddt = nu * I_d
 
 
-    return [dS_udt,dE_udt,dA_udt,dP_udt,dI_udt,dR_udt,dD_udt,
-            dS_ddt,dE_ddt,dA_ddt,dP_ddt,dI_ddt,dR_ddt,dD_ddt]
-
+  return [dS_udt,dE_udt,dA_udt,dP_udt,dI_udt,dR_udt,dD_udt,
+          dS_ddt,dE_ddt,dA_ddt,dP_ddt,dI_ddt,dR_ddt,dD_ddt]
 
 def SDmodel(alpha, epsilon):
     return odeint(ODEmodel, y0, t, (alpha, epsilon))
@@ -114,7 +131,6 @@ def plot_for_vals(dataset, alpha, epsilon):
     
     plt.plot(t, y[:,11], label='Predicted Symptomatic Compliant') #plot the model's symptomatic infections
     plt.plot(t, y[:,4]+y[:,11], label='Total Symptomatic Cases')
-  
 
 def define_dataset(county, days_after):
     POPULATIONS = {'Bernalillo' : [1, 679121],
@@ -137,7 +153,7 @@ def define_dataset(county, days_after):
     # define y0
     y0 = [POPULATIONS[county][1],1,0,0,0,0,0, # undistanced population
           0, 0, 0, 0, 0, 0, 0] # distanced population
-    #plot already existing case data
+    # plot already existing case data
     conf_data = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][2]) #print the name of the county
     pre_incidence = [float(x) for x in conf_data[index][3:]]
