@@ -1,3 +1,11 @@
+- adding more in/out equations to every term
+  - parituclarly for the I class. higher rate of being becoming distanced for people in the I class.
+epsilon is how fast they respond, inverted
+
+think more about about having a g(x) function working off either piecewise or time-based dependencies
+
+- different dependent variables for f(x) and g(x)
+
 TODO)
 
 # dSudt = -lambda*Su - f(x)*Su + g(x)*Sd
@@ -6,19 +14,6 @@ f(x) = alpha*(1-e^(-gamma*x))
 g(x) = a*(1-e^(-b*t)) [maybe go piecewise here]
 or g(x) = a*e^(b*I) # a=how fast somebody changes their mind, where 1/2 = 2 days
 
-NEED TO SPLIT INTO TWO LAMBDAS
-
-lambda_undistanced = c_d*B_i_d + C_u*B_u*I_u
-have B_Id be a factor of B_Iu
-
-have a c_i,j term that calculates transmission rate between undistanced/distanced, distanced/distanced, undistanced/undistanced
-
-lambda_ud = (C_ud*I_d + C_ud*I_u) (B/N) # for all classes
-lambda_u = lambda_du + lambda_uu
-
-could also have a term that modulates how infectious the symptomatic is
-
-just have one beta value that goes on the outside, c_ij takes care of the individual differences in everything
 
 
 
