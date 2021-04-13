@@ -1,60 +1,17 @@
-- adding more in/out equations to every term
-  - parituclarly for the I class. higher rate of being becoming distanced for people in the I class.
-epsilon is how fast they respond, inverted
+interpolation for the data? or smoothing? try to find missing data
+bcs philly data is super spiky
 
-think more about about having a g(x) function working off either piecewise or time-based dependencies
+- look at state data, metropolitan data
+0. try to look at when waves/peaks occur by examining the 14-day average from the data
+    seeing when it goes from decreasing to increasing (local min)
 
-- different dependent variables for f(x) and g(x)
+I. automatically run through every city
+II. run individual simulations for each peak and compare parameter results
+III. run parameters for the first peak, fix those parameters,
+       see what the case data results would be like if everyone had
+       acted like they had during the first peak
 
-TODO)
-
-# dSudt = -lambda*Su - f(x)*Su + g(x)*Sd
-where f(x) = transition to distanced and g(x) = transition to undistanced
-f(x) = alpha*(1-e^(-gamma*x))
-g(x) = a*(1-e^(-b*t)) [maybe go piecewise here]
-or g(x) = a*e^(b*I) # a=how fast somebody changes their mind, where 1/2 = 2 days
-
-
-
-
-
-
-
-move to r-effective: how does it work in waves of social distancing
-
-
-
-
-
----
-
-detect local peaks:
-- take a look at the documentation for the ODEmodel and see if we can turn up the granularity of the points sampled
-  - resolution of integral of integration
-  - max step (mxstep?)
-  - step size
-
-maybe just look after the model has run in the first place
-subtract (n - (n+1)), look for where its close to 0
-
---------------------------------------------------------------
-FOR THE FUTURE
---------------------------------------------------------------
-
-beta_I median lit value: 0.23
-
-
-get better guesses! latin hypercube sampling, debinfer
-
-intreprations of beta function
-
-POSSIBLE BIG QUESTION: how do we deal with r0 when we might be making things worse?
-
-ESTIMATING R-EFFECTIVE
-- r_effective = r0 under control measures
-- in terms of different cities
-
-- other methods of talking r0?
-    - non-immunity granting diseases, how do they calculate r0
-    - "waning immunity"
-- testing rate problems? 
+possible q: compare social distancing reactions across three waves?
+            how r-effective changes across time?
+            generally, how does effectiveness change over time
+            and how this varies between different places (states?) (metropolitan areas?)
