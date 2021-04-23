@@ -1,16 +1,37 @@
-interpolation for the data? or smoothing? try to find missing data
-bcs philly data is super spiky
+there are problems identifying the correct range from each peak- look at fayette 1 for example
 
-- look at state data, metropolitan data
-0. try to look at when waves/peaks occur by examining the 14-day average from the data
-    seeing when it goes from decreasing to increasing (local min)
+**RESULTS**
 
-I. automatically run through every city
-II. run individual simulations for each peak and compare parameter results
-III. run parameters for the first peak, fix those parameters,
-       see what the case data results would be like if everyone had
-       acted like they had during the first peak
+produced big csv
 
+don't have a way to bound parameters, at least inside trhe function i'm using
+
+refined accuracy through bugfixing
+
+run full simulation and use THAT resulting dataset as the base for each peak
+  - this does not quite work as you would expect. this is because the simulated dataset doesn't perfectly match up with the real dataset, so sometimes peaks and stuff are just not correlated at all.
+  - instead, i subtract the current infections from the susceptible population
+  - i am also considering finding a "ratio" of cases via running the model and then applying that to the known infection count. for example, if we knew that there were 10 times more susceptibles
+  than infecteds at time t, we can replicated that in the y0 for the peak, using the known value for infections. 
+
+----
+WHAT TO LOOK AT PARAMETERS
+
+- look at parameters for each place for each peak
+- look at states
+
+- How have people's reactions changed in a single city?
+    - has this change differed between different cities?
+
+output:
+  - we have place, peak, and parameters
+  - create a table with place, peak #, start/end date of peak, estimated total cases, actual case count, and each paramater
+  - also a rough estimate of how many people are distancing (percentage)
+    - average # of distanced people over the peak
+      - numerical integrals!!
+    - cost function / total actual cases
+
+----
 possible q: compare social distancing reactions across three waves?
             how r-effective changes across time?
             generally, how does effectiveness change over time

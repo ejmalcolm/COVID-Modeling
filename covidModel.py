@@ -8,7 +8,7 @@ from scipy.signal import find_peaks, savgol_filter
 import math
 
 import lhsmdu
-
+import csv
 
 def ODEmodel(vals, t, alpha, epsilon, tau, mu):
 
@@ -97,23 +97,28 @@ def ODEmodel(vals, t, alpha, epsilon, tau, mu):
 def SDmodel(alpha, epsilon, tau, mu):
     return odeint(ODEmodel, y0, t, (alpha, epsilon, tau, mu))
 
-def gen_time(caseinc, days_after,y0, starting_point=False):
+def gen_time(caseinc, days_after, starting_point=False):
+    # find starting and ending points
     if starting_point:
       first_index = starting_point
       last_index = first_index+days_after # first day + however many days after we want
-      incidence_data = caseinc[first_index:last_index] # 14 days before first case
+      incidence_data = caseinc[first_index:last_index]
     else:
       first_index = next((i for i, x in enumerate(caseinc) if float(x)), None) # returns the index of the first nonzero
       last_index = first_index+days_after # first day + however many days after we want
       incidence_data = caseinc[first_index-14:last_index] # 14 days before first case
     
+    # smooth data
     try:
       incidence_data = savgol_filter(incidence_data, 11, 2)
     except:
       print('Error in smoothing data-- proceeding with unsmoothed data.')
+    
+    # define t
     global t
     t = np.linspace(0,len(incidence_data),num=len(incidence_data))
-    return incidence_data, t, y0
+    
+    return incidence_data, t
 
 def SD_curve_fit(initial_guesses):
     resids = lambda params, data: SDmodel(params[0], params[1], params[2], params[3])[:,4] + SDmodel(params[0], params[1], params[2], params[3])[:,11] - data
@@ -126,10 +131,10 @@ def plot_for_vals(dataset, alpha, epsilon, tau, mu):
     f5 = plt.figure(5)
     f5.suptitle(f'alpha={round(alpha,3)}, epsilon={round(epsilon,3)}, tau={round(tau,3)}, mu={round(mu,3)}')
     
-    plt.plot(t, y[:,4], label='Predicted Symptomatic Undistanced') #plot the model's symptomatic infections
-    
     plt.plot(t, incidence_data, label='Actual Symptomatic') #plot the actual symptomatic infections
     
+    
+    plt.plot(t, y[:,4], label='Predicted Symptomatic Undistanced') #plot the model's symptomatic infections
     plt.plot(t, y[:,11], label='Predicted Symptomatic Distanced') #plot the model's symptomatic infections
     plt.plot(t, y[:,4]+y[:,11], label='Total Symptomatic Cases')
 
@@ -156,17 +161,22 @@ def define_dataset(county, days_after, starting_point=False):
     conf_data = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",") #this is the incidence
     print(conf_data[index][2]) #print the name of the county
     pre_incidence = [float(x) for x in conf_data[index][3:]]
-
+    
+    conf_incidence, t = gen_time(pre_incidence, days_after, starting_point) #returns conf incidence, t
+    
     # define y0
     if starting_point:
-      starting_infections = pre_incidence[starting_point]
-      y0 = [POPULATIONS[county][1],1,0,0,starting_infections/2,0,0, # undistanced population
+      try:
+        starting_infections = conf_incidence[0]
+      except IndexError: # v temporary bugfix
+        starting_infections = 1
+      y0 = [POPULATIONS[county][1]-starting_infections, 1, 0, 0, starting_infections/2, 0, 0, # undistanced population
             0, 0, 0, 0, starting_infections/2, 0, 0] # distanced population
     else:
       y0 = [POPULATIONS[county][1],1,0,0,0,0,0, # undistanced population
             0, 0, 0, 0, 0, 0, 0] # distanced population
     
-    return gen_time(pre_incidence, days_after, y0, starting_point) #returns conf incidence, t, y0
+    return conf_incidence, t, y0
 
 # looks at period day averages and finds relative peaks
 def detect_peaks(incidence, display=False):
@@ -174,7 +184,6 @@ def detect_peaks(incidence, display=False):
   if display:
     plt.vlines(peaks, 0, max(incidence), color='red', linestyles='dashed')
   return peaks
-
 
 def LHS_for_guesses(sample_count):
 
@@ -232,16 +241,33 @@ def LHS_for_guesses(sample_count):
 
 if __name__ == "__main__":
   for label in ['Bernalillo', 'District of Columbia', 'Denver', 'Fayette', 'Hinds', 'Honolulu', 'Juneau', 'Montgomery', 'Muscogee', 'Orleans', 'Philadelphia', 'Richmond City', 'San Francisco', 'Wake']:
+    
+    # first establish the peaks & pre-existing dataset
     incidence_data, t, y0 = define_dataset(label, starting_point = 0, days_after=500)
-    peaks = detect_peaks(incidence_data, display=True)
+    peaks = detect_peaks(incidence_data, display=False)
+
     # run simulation for each individual peak
     for i, peak in enumerate(peaks):
       incidence_data, t, y0 = define_dataset(label, starting_point=peak-50, days_after=100)
+ 
+      # obtain parameter values
       initial_guesses = LHS_for_guesses(10)
-      # graph values
       alpha, epsilon, tau, mu = SD_curve_fit(initial_guesses).x
+
+      # write parameter values to file
+      date_labels = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",")[0][3:]
+      y = SDmodel(alpha, epsilon, tau, mu)
+
+      start_of_peak = date_labels[peak-50].replace('"', '')
+      end_of_peak = date_labels[peak+50].replace('"', '')
+      data_row = [label, i+1, start_of_peak, end_of_peak, round(alpha, 4), round(epsilon, 4), round(tau, 4), round(mu, 4)]
+      with open('results.csv', 'a') as f:
+        writer = csv.writer(f)
+        writer.writerow(data_row)
+
+      # graph and save graphs
       plot_for_vals(incidence_data, alpha, epsilon, tau, mu)
-      # save graphs
+      plt.legend()
       plt.savefig(f'IndividualSims/{label}/Peak{str(i+1)}')
       plt.clf()
     
