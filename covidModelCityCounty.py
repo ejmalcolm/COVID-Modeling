@@ -1,7 +1,5 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sb
-from matplotlib.ticker import PercentFormatter
 from scipy.integrate import odeint
 from scipy.optimize import least_squares
 from scipy.signal import find_peaks, savgol_filter
@@ -10,7 +8,7 @@ import math
 import lhsmdu
 import csv
 
-def ODEmodel(vals, t, max_rate_dist, distance_accel, max_rate_undist, undistance_accel):
+def ODEmodel(vals, t, S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel):
 
   ###other parameters###
   sig = 1/5 #exposed -> presympt/astmpy
@@ -64,8 +62,11 @@ def ODEmodel(vals, t, max_rate_dist, distance_accel, max_rate_undist, undistance
   ###stuff to return###
 
   # transition functions
-  def become_distanced(x):
-    return max(max_rate_dist*( 1 - math.exp( -distance_accel*x ) ), 0)
+  def S_become_distanced(x):
+    return max(S_max_rate_dist*( 1 - math.exp( -S_distance_accel*x ) ), 0)
+
+  def I_become_distanced(x):
+    return max(I_max_rate_dist*( 1 - math.exp( -I_distance_accel*x ) ), 0)
 
   def become_undistanced(x):
     #return max(max_rate_undist * math.exp(-undistance_accel*x), 0)
@@ -74,28 +75,28 @@ def ODEmodel(vals, t, max_rate_dist, distance_accel, max_rate_undist, undistance
   # undistanced group #
   death_rate = nu*(I_u+I_d)
 
-  dS_udt = (-lamb_u * S_u) - become_distanced(death_rate)*S_u + become_undistanced(death_rate)*S_d
+  dS_udt = (-lamb_u * S_u) - S_become_distanced(death_rate)*S_u + become_undistanced(death_rate)*S_d
   dE_udt = (lamb_u * S_u) - (sig * E_u)
   dA_udt = (k * sig * E_u) - (gam_A * A_u)
   dP_udt = ( (1-k) * sig * E_u) - (delt * P_u)
-  dI_udt = (delt * P_u) - ( (nu + gam_I) * I_u)
+  dI_udt = (delt * P_u) - ( (nu + gam_I) * I_u) #- I_become_distanced(death_rate)
   dR_udt = (gam_A * A_u) + (gam_I * I_u)
   dD_udt = nu * I_u
 
   # distanced group #
-  dS_ddt = (-lamb_d * S_d) + become_distanced(death_rate)*S_u - become_undistanced(death_rate)*S_d
+  dS_ddt = (-lamb_d * S_d) + S_become_distanced(death_rate)*S_u - become_undistanced(death_rate)*S_d
   dE_ddt = (lamb_d * S_d) - (sig * E_d)
   dA_ddt = (k * sig * E_d) - (gam_A * A_d)
   dP_ddt = ( (1-k) * sig * E_d) - (delt * P_d)
-  dI_ddt = (delt * P_d) - ( (nu + gam_I) * I_d)
+  dI_ddt = (delt * P_d) - ( (nu + gam_I) * I_d) #+ I_become_distanced(death_rate)
   dR_ddt = (gam_A * A_d) + (gam_I * I_d)
   dD_ddt = nu * I_d
 
   return [dS_udt,dE_udt,dA_udt,dP_udt,dI_udt,dR_udt,dD_udt,
           dS_ddt,dE_ddt,dA_ddt,dP_ddt,dI_ddt,dR_ddt,dD_ddt]
 
-def SDmodel(max_rate_dist, distance_accel, max_rate_undist, undistance_accel):
-    return odeint(ODEmodel, y0, t, (max_rate_dist, distance_accel, max_rate_undist, undistance_accel))
+def SDmodel(S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel):
+    return odeint(ODEmodel, y0, t, (S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel))
 
 def gen_time(caseinc, days_after, starting_point=False):
     # find starting and ending points
@@ -121,15 +122,15 @@ def gen_time(caseinc, days_after, starting_point=False):
     return incidence_data, t
 
 def SD_curve_fit(initial_guesses):
-    resids = lambda params, data: SDmodel(params[0], params[1], params[2], params[3])[:,4] + SDmodel(params[0], params[1], params[2], params[3])[:,11] - data
+    resids = lambda params, data: SDmodel(params[0], params[1], params[2], params[3], params[4], params[5])[:,4] + SDmodel(params[0], params[1], params[2], params[3], params[4], params[5])[:,11] - data
     op = least_squares( resids, initial_guesses, args=(incidence_data,), bounds=([0, np.inf]))
     return op
 
 #plot model output against given dataset for parameter values
-def plot_for_vals(dataset, max_rate_dist, distance_accel, max_rate_undist, undistance_accel):
-    y = SDmodel(max_rate_dist, distance_accel, max_rate_undist, undistance_accel)
+def plot_for_vals(dataset, S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel):
+    y = SDmodel(S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel)
     f5 = plt.figure(5)
-    f5.suptitle(f'max_rate_dist={round(max_rate_dist,3)}, distance_accel={round(distance_accel,3)}, max_rate_undist={round(max_rate_undist,3)}, undistance_accel={round(undistance_accel,3)}')
+    f5.suptitle(f'S_max_rate_dist={round(S_max_rate_dist,3)}, S_distance_accel={round(S_distance_accel,3)}, max_rate_undist={round(max_rate_undist,3)}, undistance_accel={round(undistance_accel,3)}')
     
     plt.plot(t, incidence_data, label='Actual Symptomatic') #plot the actual symptomatic infections
     
@@ -138,7 +139,7 @@ def plot_for_vals(dataset, max_rate_dist, distance_accel, max_rate_undist, undis
     plt.plot(t, y[:,11], label='Predicted Symptomatic Distanced') #plot the model's symptomatic infections
     plt.plot(t, y[:,4]+y[:,11], label='Total Symptomatic Cases')
 
-def define_dataset(county, days_after, starting_point=False, fulldata=None):
+def define_dataset(county, days_after, starting_point=False):
     global POPULATIONS
     POPULATIONS = {'Bernalillo' : [1, 679121],
         'District of Columbia' : [2, 704749],
@@ -158,8 +159,10 @@ def define_dataset(county, days_after, starting_point=False, fulldata=None):
     }
     index = POPULATIONS[county][0]
 
+    COUNTY_POPULATIONS = {}
+
     # plot already existing case data
-    conf_data = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",") #this is the incidence
+    conf_data = np.genfromtxt('Data/city_county_case_time_series_incidence.csv', dtype=str,delimiter=",") #this is the incidence
 
     print(conf_data[index][2]) #print the name of the county
     print(f'Day {max(1, starting_point)} to {(0 or starting_point)+days_after}.')
@@ -172,7 +175,7 @@ def define_dataset(county, days_after, starting_point=False, fulldata=None):
     if starting_point:
       starting_infections = conf_incidence[0]
       y0 = [POPULATIONS[county][1]-starting_infections, 1, 0, 0, starting_infections/2, 0, 0, # undistanced population
-            0, 0, 0, 0, starting_infections/2, 0, 0] # distanced population
+             0, 0, 0, 0, starting_infections/2, 0, 0] # distanced population
     else:
       # it's undistance_accelch easier if you're starting from the beginning of the outbreak :)
       y0 = [POPULATIONS[county][1],1,0,0,0,0,0, # undistanced population
@@ -191,19 +194,19 @@ def LHS_for_guesses(sample_count):
 
   # we use latin hypercube sampling to obtain initial guesses for curve fitting
   lhsmdu.setRandomSeed(None)
-  max_rate_dist_max_rate_undist_sample = lhsmdu.sample(2,sample_count)
-  distance_accel_undistance_accel_sample = lhsmdu.sample(2,sample_count)
+  max_rate_dist_max_rate_undist_sample = lhsmdu.sample(3,sample_count)
+  distance_accel_undistance_accel_sample = lhsmdu.sample(3,sample_count)
   max_rate_dist_max_rate_undist_sample = max_rate_dist_max_rate_undist_sample.tolist()
   distance_accel_undistance_accel_sample = distance_accel_undistance_accel_sample.tolist()
 
   # we then adjust the variables to the correct ranges
   adjusted_sample = []
-  # for AT, we adjust to between 1 and 1/30
+  # for max rate, we adjust to between 1 and 1/30
   for var_dist in max_rate_dist_max_rate_undist_sample:
     var_dist = [(1 + var*(1/30-1)) for var in var_dist]
     adjusted_sample.append(var_dist)
-  # for EM, we adjust to between 10 and 0.0001
-  # however, we actually use theta where EM = 10^theta, so theta is between 1 and -3
+  # for accel, we adjust to between 10 and 0.0001
+  # however, we actually use theta where EM = 10^theta, so theta is between 1 and -5
   # prevents overweighting towards the top end of the spectrum
   for var_dist in distance_accel_undistance_accel_sample:
     var_dist = [(1 + var*(-5-1)) for var in var_dist]
@@ -212,20 +215,22 @@ def LHS_for_guesses(sample_count):
   # then, for each pair of 4 variables, we run it through the fit and determine cost
   # for every guess, we check to see if that's the lowest cost generated thus far
   # if it is, we store it, and at the end, that's our result
-  lowest_cost = [10000000000000, [0,0,0,0]]
+  lowest_cost = [10000000000000, [0,0,0,0,0,0]]
 
+  # [2] =  I_max_rate_dist, [5] = I_distance_accel   
   for i in range(sample_count):
     test_guesses = []
     for var_dist in adjusted_sample:
       test_guesses.append(var_dist[i])
     try:
-      # we have to rearrange test_guesses so that it goes max_rate_dist, distance_accel, max_rate_undist, undistance_accel
-      max_rate_undist = test_guesses[1]
-      test_guesses[1] = test_guesses[2]
-      test_guesses[2] = max_rate_undist
-      # we then adjust distance_accel and undistance_accel to be 10^[their value], because it's currently theta
+      # we have to rearrange test_guesses so that it goes S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel
+      # it is currently [S_distmax, undistmax, I_distmax, S_accel, unaccel, I_accel]
+      S_distmax, undistmax, I_distmax, S_accel, unaccel, I_accel = test_guesses
+      test_guesses = [S_distmax, S_accel, undistmax, unaccel, I_distmax, I_accel]
+      # we then adjust distance accels to be 10^[their value], because it's currently theta
       test_guesses[1] = 10**(test_guesses[1])
       test_guesses[3] = 10**(test_guesses[3])
+      test_guesses[5] = 10**(test_guesses[5])
 
       cost = SD_curve_fit(test_guesses).cost
       print(f"LHS attempting guess: {test_guesses} cost: {cost}")
@@ -241,21 +246,21 @@ def LHS_for_guesses(sample_count):
 
   return lowest_cost[1]
 
-def full_dynamics():
+def full_dynamics(city_county):
   global incidence_data
   global y0
-  incidence_data, t, y0 = define_dataset('Philadelphia', days_after=10000)
-  initial_guesses = LHS_for_guesses(1)
-  max_rate_dist, distance_accel, max_rate_undist, undistance_accel = SD_curve_fit(initial_guesses).x
+  incidence_data, t, y0 = define_dataset(city_county, days_after=10000)
+  initial_guesses = LHS_for_guesses(10)
+  S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel = SD_curve_fit(initial_guesses).x
 
   if True:
     f5 = plt.figure(5)
-    f5.suptitle('Full Overview of Philadelphia Simulation Dynamics')
+    f5.suptitle(f'Full Overview of {city_county} Simulation Dynamics')
     normalized_data = [x/max(incidence_data) for x in incidence_data]
     plt.plot(t, normalized_data, ':', label='Actual Symptomatic') #plot the actual symptomatic infections
 
 
-    y = SDmodel(max_rate_dist, distance_accel, max_rate_undist, undistance_accel)
+    y = SDmodel(S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel)
     categories = ['S_u','E_u','A_u','P_u','I_u','R_u','D_u', 'S_d','E_d','A_d','P_d','I_d','R_d','D_d']
     for i, category in enumerate(categories):
       data = [x/max(y[:,i]) for x in y[:,i]]
@@ -267,7 +272,6 @@ def full_dynamics():
   plt.legend()
   plt.show()
 
-
 if __name__ == "__main__":
 
   # ! parameter used to control how many guesses are ran for LHS simulations
@@ -276,7 +280,7 @@ if __name__ == "__main__":
 
   # * clear results.csv for fresh data
   with open('results.csv', 'w') as f:
-    data_row = ['City-County', 'Population', 'Peak #', 'Start Date', 'End Date', 'max_rate_dist', 'distance_accel', 'max_rate_undist', 'undistance_accel']
+    data_row = ['City-County', 'Population', 'Peak #', 'Start Date', 'End Date', 'S_max_rate_dist', 'S_distance_accel', 'max_rate_undist', 'undistance_accel']
     writer = csv.writer(f)
     writer.writerow(data_row)
 
@@ -289,22 +293,16 @@ if __name__ == "__main__":
     # * get the date of the midpoint of each peak
     peaks = detect_peaks(incidence_data, display=False)
 
+
     # * run simulation for each individual peak
     for i, peak in enumerate(peaks):
-      
-
-      # # to generate the starting values (y0) for each peak, we run the simulation up to the START of the peak
-      # incidence_data, t, y0 = define_dataset(label, days_after=(peak-50))
-      # initial_guesses = LHS_for_guesses(depth)
-      # max_rate_dist, distance_accel, max_rate_undist, undistance_accel = SD_curve_fit(initial_guesses).x
-      # y0 = SDmodel(max_rate_dist, distance_accel, max_rate_undist, undistance_accel)[-1]
 
       # we then define the dataset for the actual peak simulation
       incidence_data, t, y0 = define_dataset(label, starting_point=max(peak-50, 0), days_after=100)
 
       # obtain parameter values
       initial_guesses = LHS_for_guesses(depth)
-      max_rate_dist, distance_accel, max_rate_undist, undistance_accel = SD_curve_fit(initial_guesses).x
+      S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel = SD_curve_fit(initial_guesses).x
 
       # write parameter values to file
       date_labels = np.genfromtxt('city_county_case_time_series_incidence.csv', dtype=str,delimiter=",")[0][3:]
@@ -312,13 +310,15 @@ if __name__ == "__main__":
       start_of_peak = date_labels[peak-50].replace('"', '')
       end_of_peak = date_labels[peak+50].replace('"', '')
 
-      data_row = [label, POPULATIONS[label][1], i+1, start_of_peak, end_of_peak, round(max_rate_dist, 6), round(distance_accel, 6), round(max_rate_undist, 6), round(undistance_accel, 6)]
+      data_row = [label, POPULATIONS[label][1], i+1, start_of_peak, end_of_peak, 
+      round(S_max_rate_dist, 6), round(S_distance_accel, 6), round(max_rate_undist, 6), round(undistance_accel, 6), round(I_max_rate_dist, 6), round(I_distance_accel, 6)]
+
       with open('results.csv', 'a') as f:
         writer = csv.writer(f)
         writer.writerow(data_row)
 
       # * graph and save graphs in the IndividualSims folder
-      plot_for_vals(incidence_data, max_rate_dist, distance_accel, max_rate_undist, undistance_accel)
+      plot_for_vals(incidence_data, S_max_rate_dist, S_distance_accel, max_rate_undist, undistance_accel, I_max_rate_dist, I_distance_accel)
       plt.legend()
       plt.savefig(f'IndividualSims/{label}/Peak{str(i+1)}')
       plt.clf()

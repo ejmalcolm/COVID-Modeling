@@ -1,92 +1,13 @@
+-- NEED to edit death rate to be per captia
 
+-- nursing homes per capita
 
-***BOOKKEEPING***
+-- take max rates of dist/undist and multiply by population, add to output spreadsheet
 
-RENAMED VARAIBLES:
-  alpha and tau are now max_rate_dist and max_rate_undist, respectively
-  epsilon and mu are now dist_accel and undist_accel, respectively (short for acceleration, because they're rate of rates/second derivs)
-----------------
+-- add a measure of centrality to the peaks vs. cases per capita graph (quartiles stuff)
 
-***GETTING AN ACCURATE Y0***
+-- plot peaks
 
-i am also considering finding a "ratio" of cases via running the model and then applying that to the known infection count. for example, if we knew that there were 10 times more susceptibles
-than infecteds at time t, we can replicated that in the y0 for the peak, using the known value for infections. 
-  !!! THIS DIDN'T WORK. this is BASICALLY because the data we have is NEW CASES THAT DAY, and the MODEL outputs HOW MANY CASES THERE ARE (IN TOTAL) THAT DAY.
-  these aren't truly comparable, and I am confused as to how we are allowed? to compare them in the first place.
+-- start thinking about other dates
 
-  *THOUGHTS ON ALTERNATE APPROACHES:
-    we have a list of new cases/day and a simulated list of active cases each day
-    the simulated list would be perfect, but it doesn't really match up
-    i'm going to try running the model UP TO the starting point of the peak, and taking the END as the y0
-    -- this works OKAY, but it's still not perfect
-    -- it might be close enough for government work, though
-    -- some y0s generated are particularly bad. see new orleans 3, fayette 3, or DC 2, for example. this actually are probably leading to incorrect results.
-    -- by eye test alone, these are worse than just splitting half distanced/half undistanced
-    -- so... i'm just doing that
-    -- this way also MASSIVELY slows down calculation speed
-  
-but in conclusion... we're still going to need a way to get y0s better
-----------------
-
-
-*** A POSSIBLE ISSUE, BEFORE WE START ****
-  - we're seeing far more distanced symptomatic cases than undistanced symptomatic cases
-  - this behavior persists both for individual peak simulations and full-length outbreak simulations
-  
-  -  really, actually, this makes sense. most people who have symptoms are going to be distancing, by far.
-  - i'm just not sure I really expect the model to actually capture this, so i'm not sure the "reasoning" it's taking to get there makes any sense
-  - the only transfers between classes are taking place within the susceptible populations
-  - we would really expect a VERY HIGH transfer rate between "symtpomatic undistanced" and "symptomatic distanced"
-    - people getting sick, getting symptoms, and self-isolating
-  - however, because the model can't do this, maybe it's "compensating" by making more susceptible distanced people
-  - at the very least, seems justifiable biologically
-
-  - to begin to analyze this, i've created the Monstrosity Graph
-  - each line is one of the classes, normalized within itself
-    - so basically it represents a percentage of its full potential
-    - because of this you can't compare them to each other!
-  - clearly can see a susceptible equilibrium being reached, with most people distancing right off the bat and staying there indefinitely
-
-
-----------------
-
-
-
-***ANALYZING THE RESULTS***
-
-    - look at correlations between all different pairs of parameters and see if relationships pop up
-    - scatterplots! alpha on x, epsilon on y, etc. (look at correlation coefficient)
-    - place alpha, epsilon, tau, and mu in a matrix and calculate correlations from that
-    - might not be linear, might have to fit quadratic or cubic polynomials
-  (contained within results_analysis.csv)
-
-
-
-
-
-
-
-
-
-----
-WHAT TO LOOK AT PARAMETERS
-
-- look at parameters for each place for each peak
-- look at states
-
-- How have people's reactions changed in a single city?
-    - has this change differed between different cities?
-
-output:
-  - we have place, peak, and parameters
-  - create a table with place, peak #, start/end date of peak, estimated total cases, actual case count, and each paramater
-  - also a rough estimate of how many people are distancing (percentage)
-    - average # of distanced people over the peak
-      - numerical integrals!!
-    - cost function / total actual cases
-
-----
-possible q: compare social distancing reactions across three waves?
-            how r-effective changes across time?
-            generally, how does effectiveness change over time
-            and how this varies between different places (states?) (metropolitan areas?)
+-- send raw data (with start/end dates back in)
